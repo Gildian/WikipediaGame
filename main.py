@@ -67,16 +67,34 @@ def spinning_cursor():
 spinner = spinning_cursor()
 
 if __name__ == "__main__":
+    # get start article
     start_article = input("Enter the starting article:")
-    if not wiki_wiki.page(start_article).exists():
+    start_article = wiki_wiki.page(start_article)
+    # check if wiki exists
+    if not start_article.exists():
         print("That article doesn't exist!")
         exit()
-    start_article = wiki_wiki.page(start_article).displaytitle
+    # check if valid page
+    if "Category:Disambiguation pages" in start_article.categories.keys():
+        print("You cannot use a Disambiguation page!")
+        exit()
+    # set to page title
+    start_article = start_article.displaytitle
+
+    # get end article
     end_article = input("Enter the ending article:")
-    if not wiki_wiki.page(end_article).exists():
+    end_article = wiki_wiki.page(end_article)
+    # check if wiki exists
+    if not end_article.exists():
         print("That article doesn't exist!")
         exit()
-    end_article = wiki_wiki.page(end_article).displaytitle
+    # check if valid page
+    if "Category:Disambiguation pages" in end_article.categories.keys():
+        print("You cannot use a Disambiguation page!")
+        exit()
+    # set to page title
+    end_article = end_article.displaytitle
+
     depth = 100
 
     print(f"Finding a path from {start_article} to {end_article} (within {depth} steps)")
