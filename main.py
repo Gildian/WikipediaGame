@@ -71,16 +71,16 @@ if __name__ == "__main__":
     if not wiki_wiki.page(start_article).exists():
         print("That article doesn't exist!")
         exit()
-    start_article = wiki_wiki.page(start_article).title
+    start_article = wiki_wiki.page(start_article).displaytitle
     end_article = input("Enter the ending article:")
     if not wiki_wiki.page(end_article).exists():
         print("That article doesn't exist!")
         exit()
-    end_article = wiki_wiki.page(end_article).title
+    end_article = wiki_wiki.page(end_article).displaytitle
     depth = 100
 
     print(f"Finding a path from {start_article} to {end_article} (within {depth} steps)")
-
+    
     create_embeddings()
     path_taken.append(start_article)
     sys.stdout.write("Processing: ")
