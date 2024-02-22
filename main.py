@@ -3,8 +3,8 @@ import torch
 import torchtext
 import sys 
 
-DEBUG_MODE = False
-path_taken = []
+DEBUG_MODE = False  # Set this to True for debug output, such as search results, scores, and more clerical info. 
+path_taken = [] # Global variable for the path
 wiki_wiki = wikipediaapi.Wikipedia('WikipediaBot')
 
 def create_embeddings():
@@ -13,53 +13,53 @@ def create_embeddings():
                                  dim=300)    # embedding size = 50
 
 def get_closest_link(page, goal_page):
-    page_py = wiki_wiki.page(page)
-    links = page_py.links.keys()
-    unsqueezed_search = glove[goal_page].unsqueeze(0)
-    closest_match = ["",-99999999999]
+    page_py = wiki_wiki.page(page)  # first, grab the current page from wikipediai
+    links = page_py.links.keys()    # get links off of page
+    unsqueezed_search = glove[goal_page].unsqueeze(0)   # converts the Tensor so that we can do the Cosine Similarity later
+    closest_match = ["",-99999999999]   # stores whatever the best result was from the process below
     if DEBUG_MODE: print(f"goal:{goal_page}\ncurrent:{page}\nlink count:{len(links)}")
-    for link in links:
+    for link in links:  # this will loop over all links that we got earlier to find which is the closest to the goal
         link_name = link.lower()
-        if link_name == goal_page:
+        if link_name == goal_page:  # this check sees if the goal page is on our current page, if it is just go straight to it
             closest_match[0] = link
             closest_match[1] = current_score
             break
-        link_name_split = link_name.split()
-        blacklist_words = ["wikipedia:","template:","category:","template talk:"]
+        link_name_split = link_name.split() # splits up the link title into its individual words to process since glove cannot handle more than 1 word
+        blacklist_words = ["wikipedia:","template:","category:","template talk:"] # black listed words, these will almost always lead to the wrong answer
         if any(blword in link_name for blword in blacklist_words):
             continue
         else:
             for name in link_name_split:
-                current_score = torch.nn.functional.cosine_similarity(unsqueezed_search,glove[name].unsqueeze(0))
+                current_score = torch.nn.functional.cosine_similarity(unsqueezed_search,glove[name].unsqueeze(0))   # the actual scoring function for a given page title, the closer to 1 the better
                 if DEBUG_MODE: print(name, float(current_score))
-                if closest_match[1] < current_score and link not in path_taken and wiki_wiki.page(link).exists():
+                if closest_match[1] < current_score and link not in path_taken and wiki_wiki.page(link).exists(): # updates the closest match if it has a better score, the path hasnt been traveled, and it exists
                     closest_match[0] = link
                     closest_match[1] = current_score
     if DEBUG_MODE: print(closest_match)
-    if closest_match[0] == "":
+    if closest_match[0] == "":  # error state for if we get to a page with no links on it
         print("COULD NOT FIND NEXT PAGE")
         exit()
     return closest_match
 
-def solve_wiki_game(current_page, end_page, depth):
+def solve_wiki_game(current_page, end_page, depth): # recursive function for solving the game, it is what is called to get the search started
     sys.stdout.write('\b')
     sys.stdout.write(next(spinner))
-    sys.stdout.flush()
-    if depth < 0:
+    sys.stdout.flush()  # code to add a spinner to the console so the user can tell its working
+    if depth < 0:   # base case for if over the set depth amount of paths has been traversed, meaning a solution was not found
         print("DEPTH REACHED 0")
         return
-    if current_page.lower() == end_page.lower():
+    if current_page.lower() == end_page.lower():    # base case for if the current page is our goal page
         return
-    closest_link = get_closest_link(current_page, end_page)
-    path_taken.append(closest_link[0])
+    closest_link = get_closest_link(current_page, end_page) # finds the next best page using the above function
+    path_taken.append(closest_link[0])  # updates the path taken with the new best page
     if DEBUG_MODE: print("current path:",path_taken)
-    depth -= 1
-    if closest_link[0].lower() == end_page.lower():
+    depth -= 1  # counts down the depth so program doesnt run forever
+    if closest_link[0].lower() == end_page.lower(): # case for if the closest link is our solution to the game
         return
     else:
-        return solve_wiki_game(closest_link[0], end_page, depth)
+        return solve_wiki_game(closest_link[0], end_page, depth)    # recursive call to check the next level for a result
 
-def spinning_cursor():
+def spinning_cursor(): # spinning cursor helper code
     while True:
         for cursor in '|/-\\':
             yield cursor
