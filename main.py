@@ -3,36 +3,30 @@ import re
 from bestfirst import best_first_search
 from closestpage import solve_wiki_game
 from helpers import wiki_wiki
-    
-if __name__ == "__main__":
-    # get start article
+
+def process_wiki_article(name):
     html_cleaner = re.compile('<.*?>')
-    start_article = input("Enter the starting article:")
-    start_article = wiki_wiki.page(start_article)
+    article = wiki_wiki.page(name)
     # check if wiki exists
-    if not start_article.exists():
+    if not article.exists():
         print("That article doesn't exist!")
         exit()
     # check if valid page
-    if "Category:Disambiguation pages" in start_article.categories.keys():
+    if "Category:Disambiguation pages" in article.categories.keys():
         print("You cannot use a Disambiguation page!")
         exit()
     # set to page title
-    start_article = re.sub(html_cleaner,'',start_article.displaytitle)
+    return re.sub(html_cleaner,'',article.displaytitle)
+
+if __name__ == "__main__":
+    # get start article
+    
+    start_article = input("Enter the starting article:")
+    start_article = process_wiki_article(start_article)
 
     # get end article
     end_article = input("Enter the ending article:")
-    end_article = wiki_wiki.page(end_article)
-    # check if wiki exists
-    if not end_article.exists():
-        print("That article doesn't exist!")
-        exit()
-    # check if valid page
-    if "Category:Disambiguation pages" in end_article.categories.keys():
-        print("You cannot use a Disambiguation page!")
-        exit()
-    # set to page title
-    end_article = re.sub(html_cleaner,'',end_article.displaytitle)
+    end_article = process_wiki_article(end_article)
     
     depth = 100
 

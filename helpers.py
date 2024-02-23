@@ -45,7 +45,7 @@ def get_closest_link(page, goal_page, path_taken):
         blacklist_words = ["wikipedia:","template:","category:","template talk:","(disambiguation)"] # black listed words, these will almost always lead to the wrong answer
         if any(blword in link_name for blword in blacklist_words):
             continue
-        elif link in path_taken:
+        elif link in path_taken or link_name == page_py.displaytitle.lower():
             continue
         else:
             name_value = 0
@@ -60,10 +60,10 @@ def get_closest_link(page, goal_page, path_taken):
             if name_count != 0: converted_score = name_value / name_count
             if closest_match[1] < converted_score: # updates the closest match if it has a better score, the path hasnt been traveled, and it exists
                 closest_page = wiki_wiki.page(link)
-                if closest_page.exists():
+                if closest_page.exists() and closest_page.displaytitle not in path_taken:
                     closest_match[0] = re.sub(html_cleaner,'',closest_page.displaytitle)
                     closest_match[1] = converted_score
-    if DEBUG_MODE: print(closest_match)
+    if DEBUG_MODE: print("printing closest match:",closest_match)
     if closest_match[0] == "":  # error state for if we get to a page with no links on it
         print("COULD NOT FIND NEXT PAGE")
         exit()
