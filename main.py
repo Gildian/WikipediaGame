@@ -117,5 +117,5 @@ if __name__ == "__main__":
     create_embeddings()
     path_taken.append(start_article)
     sys.stdout.write("Processing: ")
-    best_first_search(start_article.lower(), end_article.lower())
+    solve_wiki_game(start_article.lower(), end_article.lower(), depth)
     print(path_taken)
