@@ -25,16 +25,18 @@ def get_closest_link(page, goal_page):
             closest_match[1] = current_score
             break
         link_name_split = link_name.split() # splits up the link title into its individual words to process since glove cannot handle more than 1 word
-        blacklist_words = ["wikipedia:","template:","category:","template talk:"] # black listed words, these will almost always lead to the wrong answer
+        blacklist_words = ["wikipedia:","template:","category:","template talk:","(disambiguation)"] # black listed words, these will almost always lead to the wrong answer
         if any(blword in link_name for blword in blacklist_words):
             continue
         else:
             for name in link_name_split:
                 current_score = torch.nn.functional.cosine_similarity(unsqueezed_search,glove[name].unsqueeze(0))   # the actual scoring function for a given page title, the closer to 1 the better
                 if DEBUG_MODE: print(name, float(current_score))
-                if closest_match[1] < current_score and link not in path_taken and wiki_wiki.page(link).exists(): # updates the closest match if it has a better score, the path hasnt been traveled, and it exists
-                    closest_match[0] = link
-                    closest_match[1] = current_score
+                if closest_match[1] < current_score and link not in path_taken: # updates the closest match if it has a better score, the path hasnt been traveled, and it exists
+                    closest_page = wiki_wiki.page(link)
+                    if closest_page.exists():
+                        closest_match[0] = closest_page.displaytitle
+                        closest_match[1] = current_score
     if DEBUG_MODE: print(closest_match)
     if closest_match[0] == "":  # error state for if we get to a page with no links on it
         print("COULD NOT FIND NEXT PAGE")
