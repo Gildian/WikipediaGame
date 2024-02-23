@@ -2,7 +2,7 @@ import wikipediaapi
 import torch
 import torchtext
 import sys 
-
+import heapq
 DEBUG_MODE = False  # Set this to True for debug output, such as search results, scores, and more clerical info. 
 path_taken = [] # Global variable for the path
 wiki_wiki = wikipediaapi.Wikipedia('WikipediaBot')
@@ -59,6 +59,21 @@ def solve_wiki_game(current_page, end_page, depth): # recursive function for sol
     else:
         return solve_wiki_game(closest_link[0], end_page, depth)    # recursive call to check the next level for a result
 
+def best_first_search(start_page, goal_page):
+    queue = []
+    heapq.heappush(queue, (0, start_page))  # priority queue to store the pages to be explored
+    visited = set()  # set to store the visited pages
+    while queue:
+        _, current_page = heapq.heappop(queue)  # get the page with the highest priority
+        if current_page.lower() == goal_page.lower():  # if the current page is the goal page, return the path
+            return path_taken
+        if current_page.lower() not in visited:  # if the current page has not been visited
+            visited.add(current_page.lower())  # mark the current page as visited
+            closest_link = get_closest_link(current_page, goal_page)  # find the next best page
+            path_taken.append(closest_link[0])  # update the path taken
+            heapq.heappush(queue, (closest_link[1], closest_link[0]))  # add the next page to the priority queue
+    return None  # if no path is found
+
 def spinning_cursor(): # spinning cursor helper code
     while True:
         for cursor in '|/-\\':
@@ -102,5 +117,5 @@ if __name__ == "__main__":
     create_embeddings()
     path_taken.append(start_article)
     sys.stdout.write("Processing: ")
-    solve_wiki_game(start_article.lower(), end_article.lower(), depth)
+    best_first_search(start_article.lower(), end_article.lower())
     print(path_taken)
