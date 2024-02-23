@@ -1,10 +1,12 @@
 import sys 
+import re
 from bestfirst import best_first_search
 from closestpage import solve_wiki_game
 from helpers import wiki_wiki
     
 if __name__ == "__main__":
     # get start article
+    html_cleaner = re.compile('<.*?>')
     start_article = input("Enter the starting article:")
     start_article = wiki_wiki.page(start_article)
     # check if wiki exists
@@ -16,7 +18,7 @@ if __name__ == "__main__":
         print("You cannot use a Disambiguation page!")
         exit()
     # set to page title
-    start_article = start_article.displaytitle
+    start_article = re.sub(html_cleaner,'',start_article.displaytitle)
 
     # get end article
     end_article = input("Enter the ending article:")
@@ -30,17 +32,19 @@ if __name__ == "__main__":
         print("You cannot use a Disambiguation page!")
         exit()
     # set to page title
-    end_article = end_article.displaytitle
-
+    end_article = re.sub(html_cleaner,'',end_article.displaytitle)
+    
     depth = 100
 
     print(f"Finding a path from {start_article} to {end_article} (within {depth} steps)")
     
     path_taken = []
     path_taken.append(start_article)
-    sys.stdout.write("Processing: ")
-    
+
     # Uncomment the algo you want to use
-    # best_first_search(start_article.lower(), end_article.lower())
-    solve_wiki_game(start_article.lower(), end_article.lower(), depth, path_taken)
-    print(path_taken)
+    print("Best First Search")
+    sys.stdout.write("Processing: ")
+    print("\n",best_first_search(start_article.lower(), end_article.lower()))
+    print("Closest Page")
+    sys.stdout.write("Processing: ")
+    print("\n",solve_wiki_game(start_article.lower(), end_article.lower(), depth, path_taken))
