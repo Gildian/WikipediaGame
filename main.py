@@ -1,6 +1,6 @@
 import sys 
 import re
-from search_functions import best_first_search, solve_wiki_game
+from search_functions import best_first_search, solve_wiki_game, greedy_search
 from helpers import wiki_wiki
 
 def process_wiki_article(name):
@@ -38,10 +38,11 @@ if __name__ == "__main__":
     path_taken = [start_article]
 
     # Uncomment the algo you want to use
-    print("Best First Search")
-    sys.stdout.write("Processing: ")
+    sys.stdout.write("Processing Best First Search: ")
     print("\n",best_first_search(start_article.lower(), end_article.lower()))
-    
-    print("Closest Page")
-    sys.stdout.write("Processing: ")
+
+    sys.stdout.write("Processing Closest Page: ")
     print("\n",solve_wiki_game(start_article.lower(), end_article.lower(), depth, path_taken))
+
+    sys.stdout.write("Processing Greedy Search: ")
+    print("\n",greedy_search(start_article.lower(), end_article.lower()))

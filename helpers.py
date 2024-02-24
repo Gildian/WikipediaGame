@@ -6,7 +6,7 @@ import re
 
 def create_embeddings():
     return torchtext.vocab.GloVe(name="6B", # trained on Wikipedia 2014 corpus
-                                 dim=300)    # embedding size = 50
+                                 dim=300)    # embedding size = 300
     
 glove = create_embeddings()
 
@@ -108,3 +108,33 @@ def get_closest_links(page, goal_page, path_taken):
         print("COULD NOT FIND NEXT PAGE")
         exit()
     return sorted(best_links, key=lambda tup: tup[1], reverse=True)
+
+def get_closest_links_greedy(page, goal_page, path_taken):
+    page_py = wiki_wiki.page(page)
+    links = page_py.links.keys()
+    best_links = []
+    if DEBUG_MODE:
+        print(f"goal:{goal_page}\ncurrent:{page}\nlink count:{len(links)}")
+    for link in links:
+        link_name = link.lower()
+        if link_name == goal_page:
+            best_links.insert(0, (link, 1))
+            break
+        link_name_split = link_name.split()
+        blacklist_words = ["wikipedia:", "template:", "category:", "template talk:", "(disambiguation)"]
+        if any(blword in link_name for blword in blacklist_words) or link in path_taken:
+            continue
+        else:
+            name_value = 0
+            name_count = 0
+            for name in link_name_split:
+                current_score = get_word_score(goal_page, name)
+                if current_score != 0:
+                    name_value += current_score
+                    name_count += 1
+            converted_score = -1 if name_count == 0 else name_value / name_count
+            best_links.append((link, converted_score))
+            if DEBUG_MODE:
+                print(link, float(converted_score))
+    return sorted(best_links, key=lambda tup: tup[1], reverse=True)
+
