@@ -1,7 +1,6 @@
 import sys 
 import re
-from bestfirst import best_first_search
-from closestpage import solve_wiki_game
+from search_functions import best_first_search, solve_wiki_game
 from helpers import wiki_wiki
 
 def process_wiki_article(name):
