@@ -20,6 +20,7 @@ def greedy_search(start_page, goal_page):
             new_list = current_page_list.copy()
             new_list.append(closest_link[0])
             heapq.heappush(queue, (closest_link[1], new_list))  # add the next page to the priority queue
+            visited.add(closest_link[0][0].lower())  # mark the next page as visited
     print("QUEUE EMPTY WITHOUT SOLUTION")
     exit()
 
