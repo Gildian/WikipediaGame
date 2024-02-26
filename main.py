@@ -2,6 +2,7 @@ import sys
 import re
 from search_functions import best_first_search, solve_wiki_game, greedy_search
 from helpers import wiki_wiki
+import time
 
 def process_wiki_article(name):
     html_cleaner = re.compile('<.*?>')
@@ -38,11 +39,20 @@ if __name__ == "__main__":
     path_taken = [start_article]
 
     # Uncomment the algo you want to use
+    start = time.time()
     sys.stdout.write("Processing Best First Search: ")
     print("\n",best_first_search(start_article.lower(), end_article.lower()))
+    end = time.time()
+    print("That took",end-start,"seconds")
 
+    start = time.time()
     sys.stdout.write("Processing Closest Page: ")
     print("\n",solve_wiki_game(start_article.lower(), end_article.lower(), depth, path_taken))
+    end = time.time()
+    print("That took",end-start,"seconds")
 
+    start = time.time()
     sys.stdout.write("Processing Greedy Search: ")
     print("\n",greedy_search(start_article.lower(), end_article.lower()))
+    end = time.time()
+    print("That took",end-start,"seconds")

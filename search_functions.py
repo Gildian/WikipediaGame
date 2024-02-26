@@ -42,10 +42,13 @@ def best_first_search(start_page, goal_page, beam_width=3):
                 visited.add(current_page)  # mark the current page as visited
                 closest_links = get_closest_links(current_page, goal_page, current_page_list)  # find the next best page
                 for links in closest_links:
-                    new_score = score + -links[1]
-                    new_list = current_page_list.copy()
-                    new_list.append(links[0])
-                    heapq.heappush(queue, (new_score, new_list))  # add the next page to the priority queue
+                    if(links[0] == -1):
+                        heapq.heappush(queue, (999, current_page_list))  # add the next page to the priority queue
+                    else:
+                        new_score = score + -links[1]
+                        new_list = current_page_list.copy()
+                        new_list.append(links[0])
+                        heapq.heappush(queue, (new_score, new_list))  # add the next page to the priority queue
     print("QUEUE EMPTY WITHOUT SOLUTION")
     exit()
 
