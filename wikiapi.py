@@ -20,7 +20,7 @@ def getPageDetails(page: str):
     DATA = response.json()
     if DEBUG_MODE: print("printing date for page:",page,"\n",DATA)
     clean_data = {}
-    clean_data["exists"] = True if DATA["query"]["pageids"][0] != -1 else False
+    clean_data["exists"] = True if DATA["query"]["pageids"][0] != '-1' else False
     if clean_data["exists"]: clean_data["title"] = DATA["query"]["pages"][DATA["query"]["pageids"][0]]["title"]
     if clean_data["exists"]: clean_data["categories"] = DATA["query"]["pages"][DATA["query"]["pageids"][0]]["categories"]
     return clean_data
