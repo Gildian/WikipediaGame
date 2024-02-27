@@ -4,7 +4,6 @@ This bot requires the GloVe Wikipedia 2014 + Gigaword 5 vectors to work [downloa
 ## Dependencies
 As stated above the GloVe vectors are required.  
 Python Dependencies:
-* wikipedia-api
 * torch
 * torchtext
 
