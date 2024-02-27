@@ -4,7 +4,6 @@ import torchtext
 import re
 import sys
 import requests
-import wikipediaapi
 import concurrent.futures
 
 def create_embeddings():
@@ -14,7 +13,7 @@ def create_embeddings():
 glove = create_embeddings()
 
 
-DEBUG_MODE = False  # Set this to True for debug output, such as search results, scores, and more clerical info. 
+DEBUG_MODE = True  # Set this to True for debug output, such as search results, scores, and more clerical info. 
 if DEBUG_MODE:
     wikipediaapi.log.setLevel(level=wikipediaapi.logging.DEBUG)
     out_hdlr=wikipediaapi.logging.StreamHandler(sys.stderr)
@@ -49,6 +48,9 @@ def get_word_score(target, unit): # function for getting the score of two words
 def get_closest_link(page, goal_page, path_taken):
     html_cleaner = re.compile('<.*?>')
     page_py = wiki_wiki.page(page)  # first, grab the current page from wikipediai
+    if not page_py.exists():
+        print("Page does not exist!")
+        exit()
     links = getAllValidLinks(page_py)    # get links off of page
     closest_match = ["",-1]   # stores whatever the best result was from the process below
     if DEBUG_MODE: print(f"goal:{goal_page}\ncurrent:{page}\nlink count:{len(links)}")
@@ -82,12 +84,15 @@ def get_closest_link(page, goal_page, path_taken):
                     closest_match[1] = converted_score
     if DEBUG_MODE: print("printing closest match:",closest_match)
     if closest_match[0] == "":  # error state for if we get to a page with no links on it
-        print("COULD NOT FIND NEXT PAGE")
-        exit()
+        closest_match[0] == ""
+        closest_match[1] == -999
     return closest_match
 
 def get_closest_links(page, goal_page, path_taken):
     page_py = wiki_wiki.page(page)
+    if not page_py.exists():
+        print("Page does not exist!")
+        exit()
     links = getAllValidLinks(page_py)
     best_links = []
     if DEBUG_MODE:
@@ -114,8 +119,7 @@ def get_closest_links(page, goal_page, path_taken):
             if DEBUG_MODE:
                 print(link["*"], float(converted_score))
     if not best_links:
-        print("COULD NOT FIND NEXT PAGE")
-        exit()
+        best_links.append(("",-999))
     return sorted(best_links, key=lambda tup: tup[1], reverse=True)
 
 def get_closest_links_greedy(page, goal_page, path_taken):
