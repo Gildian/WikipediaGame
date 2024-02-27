@@ -2,6 +2,8 @@ import wikipediaapi
 import torch
 import torchtext
 import re
+import requests
+from bs4 import BeautifulSoup
 
 
 def create_embeddings():
@@ -37,46 +39,36 @@ def get_word_score(target, unit): # function for getting the score of two words
     if target_count != 0: converted_score = target_score / target_count
     return converted_score
 
-def get_closest_link(page, goal_page, path_taken):
-    html_cleaner = re.compile('<.*?>')
-    page_py = wiki_wiki.page(page)  # first, grab the current page from wikipediai
-    links = page_py.links.keys()    # get links off of page
-    closest_match = ["",-1]   # stores whatever the best result was from the process below
-    if DEBUG_MODE: print(f"goal:{goal_page}\ncurrent:{page}\nlink count:{len(links)}")
-    for link in links:  # this will loop over all links that we got earlier to find which is the closest to the goal
-        link_name = link.lower()
-        if link_name == goal_page:  # this check sees if the goal page is on our current page, if it is just go straight to it
-            closest_match[0] = link
-            closest_match[1] = 1
-            break
-        link_name_split = link_name.split() # splits up the link title into its individual words to process since glove cannot handle more than 1 word
-        blacklist_words = ["wikipedia:","template:","category:","template talk:","(disambiguation)"] # black listed words, these will almost always lead to the wrong answer
-        if any(blword in link_name for blword in blacklist_words):
-            continue
-        elif link in path_taken or link_name == page_py.displaytitle.lower():
-            continue
-        else:
-            name_value = 0
-            name_count = 0
-            for name in link_name_split:
-                current_score = get_word_score(goal_page,name)
-                if current_score != 0:
-                    name_value += current_score
-                    name_count += 1
-                    if DEBUG_MODE: print(name, float(current_score))
-            converted_score = 0
-            if name_count != 0: converted_score = name_value / name_count
-            if closest_match[1] < converted_score: # updates the closest match if it has a better score, the path hasnt been traveled, and it exists
-                closest_page = wiki_wiki.page(link)
-                if closest_page.exists() and closest_page.displaytitle not in path_taken:
-                    closest_match[0] = re.sub(html_cleaner,'',closest_page.displaytitle)
-                    closest_match[1] = converted_score
-    if DEBUG_MODE: print("printing closest match:",closest_match)
-    if closest_match[0] == "":  # error state for if we get to a page with no links on it
-        print("COULD NOT FIND NEXT PAGE")
-        exit()
-    return closest_match
 
+def get_wikipedia_links(url):
+    # Send a GET request to the URL
+    response = requests.get(url)
+    
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Parse the HTML content of the page
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # Find all anchor tags (links)
+        links = soup.find_all('a', href=True)
+        
+        # Extract the URLs from the anchor tags
+        link_urls = [link['href'] for link in links if link['href'].startswith('/wiki/')]
+        
+        # Add Wikipedia domain to relative URLs
+        link_urls = ['https://en.wikipedia.org' + link for link in link_urls]
+        
+        return link_urls
+    else:
+        print("Failed to retrieve the page:", response.status_code)
+        return []
+
+url = 'https://en.wikipedia.org/wiki/Python_(programming_language)'
+links = get_wikipedia_links(url)
+for link in links:
+    print(link)
+
+'''
 def get_closest_links(page, goal_page, path_taken):
     page_py = wiki_wiki.page(page)
     links = page_py.links.keys()
@@ -108,33 +100,4 @@ def get_closest_links(page, goal_page, path_taken):
         print("COULD NOT FIND NEXT PAGE")
         exit()
     return sorted(best_links, key=lambda tup: tup[1], reverse=True)
-
-def get_closest_links_greedy(page, goal_page, path_taken):
-    page_py = wiki_wiki.page(page)
-    links = page_py.links.keys()
-    best_links = []
-    if DEBUG_MODE:
-        print(f"goal:{goal_page}\ncurrent:{page}\nlink count:{len(links)}")
-    for link in links:
-        link_name = link.lower()
-        if link_name == goal_page:
-            best_links.insert(0, (link, 1))
-            break
-        link_name_split = link_name.split()
-        blacklist_words = ["wikipedia:", "template:", "category:", "template talk:", "(disambiguation)"]
-        if any(blword in link_name for blword in blacklist_words) or link in path_taken:
-            continue
-        else:
-            name_value = 0
-            name_count = 0
-            for name in link_name_split:
-                current_score = get_word_score(goal_page, name)
-                if current_score != 0:
-                    name_value += current_score
-                    name_count += 1
-            converted_score = -1 if name_count == 0 else name_value / name_count
-            best_links.append((link, converted_score))
-            if DEBUG_MODE:
-                print(link, float(converted_score))
-    return sorted(best_links, key=lambda tup: tup[1], reverse=True)
-
+'''
