@@ -63,7 +63,7 @@ def get_wikipedia_links(url):
         print("Failed to retrieve the page:", response.status_code)
         return []
 
-url = 'https://en.wikipedia.org/wiki/Python_(programming_language)'
+url = 'https://en.wikipedia.org/wiki/Spatula'
 links = get_wikipedia_links(url)
 for link in links:
     print(link)
