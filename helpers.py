@@ -6,6 +6,7 @@ import sys
 import requests
 import concurrent.futures
 
+#Haha yes, I'm using a global variable, fight me
 def create_embeddings():
     return torchtext.vocab.GloVe(name="6B", dim=300)
 
