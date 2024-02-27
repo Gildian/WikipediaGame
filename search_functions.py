@@ -1,43 +1,46 @@
 import heapq
-from helpers import get_closest_links,get_closest_link, get_closest_links_greedy, spinner, DEBUG_MODE
+from helpers import get_closest_links,get_closest_link, spinner, DEBUG_MODE #, get_closest_links_greedy
 import sys
+from wikiapi import getPageDetails
 
-def greedy_search(start_page, goal_page):
-    queue = []
-    heapq.heappush(queue, (0, [start_page]))  # priority queue to store the pages to be explored
-    visited = set()  # set to store the visited pages
-    while queue:
-        sys.stdout.write('\b')
-        sys.stdout.write(next(spinner))
-        sys.stdout.flush()  # code to add a spinner to the console so the user can tell its working
-        _, current_page_list = heapq.heappop(queue)  # get the page with the highest priority
-        current_page = current_page_list[-1][0].lower()  # extract the string from the tuple and convert to lowercase
-        if current_page == goal_page.lower():  # if the current page is the goal page, return the path
-            return current_page_list
-        if current_page not in visited:  # if the current page has not been visited
-            visited.add(current_page)  # mark the current page as visited
-            closest_link = get_closest_links_greedy(current_page, goal_page, current_page_list)  # find the next best page
-            new_list = current_page_list.copy()
-            new_list.append(closest_link[0])
-            heapq.heappush(queue, (closest_link[1], new_list))  # add the next page to the priority queue
-            visited.add(closest_link[0][0].lower())  # mark the next page as visited
-    print("QUEUE EMPTY WITHOUT SOLUTION")
-    exit()
+# def greedy_search(start_page, goal_page):
+#     queue = []
+#     heapq.heappush(queue, (0, [start_page]))  # priority queue to store the pages to be explored
+#     visited = set()  # set to store the visited pages
+#     while queue:
+#         sys.stdout.write('\b')
+#         sys.stdout.write(next(spinner))
+#         sys.stdout.flush()  # code to add a spinner to the console so the user can tell its working
+#         _, current_page_list = heapq.heappop(queue)  # get the page with the highest priority
+#         current_page = current_page_list[-1][0].lower()  # extract the string from the tuple and convert to lowercase
+#         if current_page == goal_page.lower():  # if the current page is the goal page, return the path
+#             return current_page_list
+#         if current_page not in visited:  # if the current page has not been visited
+#             visited.add(current_page)  # mark the current page as visited
+#             closest_link = get_closest_links_greedy(current_page, goal_page, current_page_list)  # find the next best page
+#             new_list = current_page_list.copy()
+#             new_list.append(closest_link[0])
+#             heapq.heappush(queue, (closest_link[1], new_list))  # add the next page to the priority queue
+#             visited.add(closest_link[0][0].lower())  # mark the next page as visited
+#     print("QUEUE EMPTY WITHOUT SOLUTION")
+#     exit()
 
 def best_first_search(start_page, goal_page, beam_width=3):
     queue = []
     heapq.heappush(queue, (0, [start_page]))  # priority queue to store the pages to be explored
     visited = set()  # set to store the visited pages
-    while queue:
+    while len(queue) != 0:
         if DEBUG_MODE: print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         sys.stdout.write('\b')
         sys.stdout.write(next(spinner))
         sys.stdout.flush()  # code to add a spinner to the console so the user can tell its working
         current_pages = heapq.nsmallest(beam_width, queue)  # get the pages with the highest priority
         for score, current_page_list in current_pages:
-            if current_page_list[-1].lower() == goal_page.lower():  # if the current page is the goal page, return the path
+            page_details = getPageDetails(current_page_list[-1])
+            current_page_list[-1] = page_details["title"]
+            if page_details["title"].lower() == goal_page.lower():  # if the current page is the goal page, return the path
                 return current_page_list
-            current_page = current_page_list[-1].lower()
+            current_page = page_details["title"]
             if current_page not in visited:  # if the current page has not been visited
                 visited.add(current_page)  # mark the current page as visited
                 closest_links = get_closest_links(current_page, goal_page, current_page_list)  # find the next best page

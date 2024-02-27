@@ -1,28 +1,7 @@
 import sys 
-import re
-from search_functions import best_first_search, solve_wiki_game, greedy_search
-from helpers import wiki_wiki
-
-def process_wiki_article(name):
-    html_cleaner = re.compile('<.*?>')
-    article = wiki_wiki.page(name)
-    
-    # check if wiki exists
-    if not article.exists():
-        print("That article doesn't exist!")
-        exit()
-    
-    # check if valid page
-    if "Category:Disambiguation pages" in article.categories.keys():
-        print("You cannot use a Disambiguation page!")
-        exit()
-    
-    # set to page title
-    return re.sub(html_cleaner,'',article.displaytitle)
-
-def get_user_input(prompt):
-    user_input = input(prompt)
-    return process_wiki_article(user_input)
+from search_functions import best_first_search, solve_wiki_game # , greedy_search
+from helpers import get_user_input
+import time
 
 if __name__ == "__main__":
     # get start article
@@ -39,10 +18,16 @@ if __name__ == "__main__":
 
     # Uncomment the algo you want to use
     sys.stdout.write("Processing Best First Search: ")
-    print("\n",best_first_search(start_article.lower(), end_article.lower()))
+    start = time.time()
+    print("\n",best_first_search(start_article, end_article))
+    end = time.time()
+    print("That took",end-start,"seconds")
 
     sys.stdout.write("Processing Closest Page: ")
-    print("\n",solve_wiki_game(start_article.lower(), end_article.lower(), depth, path_taken))
+    start = time.time()
+    print("\n",solve_wiki_game(start_article, end_article, depth, path_taken))
+    end = time.time()
+    print("That took",end-start,"seconds")
 
-    sys.stdout.write("Processing Greedy Search: ")
-    print("\n",greedy_search(start_article.lower(), end_article.lower()))
+    # sys.stdout.write("Processing Greedy Search: ")
+    # print("\n",greedy_search(start_article.lower(), end_article.lower()))

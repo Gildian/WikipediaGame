@@ -1,10 +1,6 @@
-import wikipediaapi
 import torch
 import torchtext
-import re
-import requests
-from bs4 import BeautifulSoup
-
+from wikiapi import getAllValidLinks, getPageDetails
 
 def create_embeddings():
     return torchtext.vocab.GloVe(name="6B", # trained on Wikipedia 2014 corpus
@@ -14,7 +10,6 @@ glove = create_embeddings()
 
 
 DEBUG_MODE = False  # Set this to True for debug output, such as search results, scores, and more clerical info. 
-wiki_wiki = wikipediaapi.Wikipedia('WikipediaBot')
 
 def spinning_cursor(): # spinning cursor helper code
     while True:
@@ -22,6 +17,27 @@ def spinning_cursor(): # spinning cursor helper code
             yield cursor
 
 spinner = spinning_cursor()
+
+def process_wiki_article(name):
+    article = getPageDetails(name)
+    
+    # check if wiki exists
+    if not article["exists"]:
+        print("That article doesn't exist!")
+        exit()
+    
+    # check if valid page
+    for category in article["categories"]:
+        if "Category:Disambiguation pages" == category["title"]:
+            print("You cannot use a Disambiguation page!")
+            exit()
+    
+    # set to page title
+    return article["title"]
+
+def get_user_input(prompt):
+    user_input = input(prompt)
+    return process_wiki_article(user_input)
 
 def get_word_score(target, unit): # function for getting the score of two words
     # split target here to prevent repetition in code
@@ -39,60 +55,19 @@ def get_word_score(target, unit): # function for getting the score of two words
     if target_count != 0: converted_score = target_score / target_count
     return converted_score
 
-
-def get_wikipedia_links(url):
-    # Send a GET request to the URL
-    response = requests.get(url)
-    
-    # Check if the request was successful
-    if response.status_code == 200:
-        # Parse the HTML content of the page
-        soup = BeautifulSoup(response.content, 'html.parser')
-        
-        # Find all anchor tags (links)
-        links = soup.find_all('a', href=True)
-        
-        # Extract the URLs from the anchor tags
-        link_urls = [link['href'] for link in links if link['href'].startswith('/wiki/')]
-        
-        # Add Wikipedia domain to relative URLs
-        link_urls = ['https://en.wikipedia.org' + link for link in link_urls]
-        
-        return link_urls
-    else:
-        print("Failed to retrieve the page:", response.status_code)
-        return []
-
-def get_article_names(links):
-    article_names = []
-    for link in links:
-        article_name = link.split('/')[-1]
-        article_names.append(article_name)
-    return article_names
-
-url = 'https://en.wikipedia.org/wiki/Spatula'
-links = get_wikipedia_links(url)
-
-for link in links:
-    print(link)
-
-print(get_article_names(links))
-
-'''
 def get_closest_links(page, goal_page, path_taken):
-    page_py = wiki_wiki.page(page)
-    links = page_py.links.keys()
+    links = getAllValidLinks(page)
     best_links = []
     if DEBUG_MODE:
         print(f"goal:{goal_page}\ncurrent:{page}\nlink count:{len(links)}")
     for link in links:
-        link_name = link.lower()
+        link_name = link["*"].lower()
         if link_name == goal_page:
-            best_links.insert(0, (link, 1))
+            best_links.insert(0, (link["*"], 1))
             break
         link_name_split = link_name.split()
         blacklist_words = ["wikipedia:", "template:", "category:", "template talk:", "(disambiguation)"]
-        if any(blword in link_name for blword in blacklist_words) or link in path_taken:
+        if any(blword in link_name for blword in blacklist_words) or link["*"] in path_taken:
             continue
         else:
             name_value = 0
@@ -103,11 +78,51 @@ def get_closest_links(page, goal_page, path_taken):
                     name_value += current_score
                     name_count += 1
             converted_score = -1 if name_count == 0 else name_value / name_count
-            best_links.append((link, converted_score))
+            best_links.append((link["*"], converted_score))
             if DEBUG_MODE:
-                print(link, float(converted_score))
-    if not best_links:
+                print(link["*"], float(converted_score))
+    if len(best_links) == 0:
         print("COULD NOT FIND NEXT PAGE")
         exit()
     return sorted(best_links, key=lambda tup: tup[1], reverse=True)
-'''
+
+def get_closest_link(page, goal_page, path_taken):
+    links = getAllValidLinks(page)
+    closest_match = ["", -1]
+    if DEBUG_MODE:
+        print(f"goal:{goal_page}\ncurrent:{page}\nlink count:{len(links)}")
+    for link in links:
+        link_name = link["*"].lower()
+        if link_name == goal_page:
+            closest_match[0] = link["*"]
+            closest_match[1] = 1
+            break
+        link_name_split = link_name.split()
+        blacklist_words = ["wikipedia:", "template:", "category:", "template talk:", "(disambiguation)"]
+        if any(blword in link_name for blword in blacklist_words):
+            continue
+        elif link["*"] in path_taken or link_name == page.lower():
+            continue
+        else:
+            name_value = 0
+            name_count = 0
+            for name in link_name_split:
+                current_score = get_word_score(goal_page, name)
+                if current_score != 0:
+                    name_value += current_score
+                    name_count += 1
+                    if DEBUG_MODE: print(name, float(current_score))
+            converted_score = 0
+            if name_count != 0:
+                converted_score = name_value / name_count
+            if closest_match[1] < converted_score:
+                closest_page = getPageDetails(link["*"])
+                if closest_page["exists"] and closest_page["title"] not in path_taken:
+                    closest_match[0] = closest_page["title"]
+                    closest_match[1] = converted_score
+    if DEBUG_MODE:
+        print("printing closest match:", closest_match)
+    if closest_match[0] == "":
+        print("COULD NOT FIND NEXT PAGE")
+        exit()
+    return closest_match
