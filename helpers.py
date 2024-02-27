@@ -63,10 +63,20 @@ def get_wikipedia_links(url):
         print("Failed to retrieve the page:", response.status_code)
         return []
 
+def get_article_names(links):
+    article_names = []
+    for link in links:
+        article_name = link.split('/')[-1]
+        article_names.append(article_name)
+    return article_names
+
 url = 'https://en.wikipedia.org/wiki/Spatula'
 links = get_wikipedia_links(url)
+
 for link in links:
     print(link)
+
+print(get_article_names(links))
 
 '''
 def get_closest_links(page, goal_page, path_taken):
