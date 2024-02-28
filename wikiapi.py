@@ -1,16 +1,12 @@
 import requests
 import concurrent.futures
+from bs4 import BeautifulSoup
 
-DEBUG_MODE = True
+DEBUG_MODE = False
 
 URL = "https://en.wikipedia.org/w/api.php"
 BLACKLISTED_SECTIONS = ["References", "External links"]
 session = requests.Session()
-
-ACTION = "action"
-FORMAT = "format"
-JSON = "json"
-REDIRECTS = "redirects"
 
 def make_request(params):
     try:
@@ -24,12 +20,12 @@ def make_request(params):
 
 def getPageDetails(page: str):
     PARAMS = {
-        ACTION: "query",
+        "action": "query",
         "titles": page,
-        FORMAT: JSON,
+        "format": "json",
         "indexpageids":"",
         "prop":"categories",
-        REDIRECTS:""
+        "redirects":""
     }
     DATA = make_request(PARAMS)
     clean_data = {}
@@ -40,29 +36,50 @@ def getPageDetails(page: str):
 
 def getAllSections(page: str):
     PARAMS = {
-        ACTION: "parse",
+        "action": "parse",
         "page": page,
         "prop": "sections",
-        FORMAT: JSON,
-        REDIRECTS:""
+        "format": "json",
+        "redirects":""
     }
     DATA = make_request(PARAMS)
     return DATA["parse"]["sections"]
 
 def getLinksBySection(page: str, section: int, valid_links):
     PARAMS = {
-        ACTION: "parse",
+        "action": "parse",
         "page": page,
         "prop": "links",
         "section": section,
-        FORMAT: JSON,
-        REDIRECTS:""
+        "format": "json",
+        "redirects":""
     }
     DATA = make_request(PARAMS)
     valid_links.extend([link for link in DATA["parse"]["links"] if link["ns"] == 0])
 
+def getLinksInLead(page: str, valid_links):
+    PARAMS = {
+        "action":"parse",
+        "format":"json",
+        "prop":"text",
+        "page":page,
+        "redirects":"",
+        "section":"0"
+    }
+    DATA = make_request(PARAMS)
+    page_text = DATA["parse"]["text"]["*"]
+    soup = BeautifulSoup(page_text,features="html.parser")
+    div_zone = soup.select("div.mw-content-ltr.mw-parser-output p")
+    # print(div_zone)
+    for paragraph in div_zone:
+        for link in paragraph.select("a[href]"):
+            if "/wiki/" in link['href']:
+                valid_links.append({'ns':0,'exists':'','*':link['href'].replace("/wiki/","").replace("_"," ")})
+    
+
 def getAllValidLinks(page: str):
     valid_links = []
+    getLinksInLead(page, valid_links)
     sections = getAllSections(page)
     with concurrent.futures.ThreadPoolExecutor(max_workers=25) as executor:
         for i, section in enumerate(sections):
