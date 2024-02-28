@@ -1,14 +1,14 @@
 import sys 
 from search_functions import best_first_search, depth_first_search # , greedy_search
-from helpers import get_user_input
+from helpers import get_user_input, process_wiki_article
 import time
 
 if __name__ == "__main__":
     start_article = ""
     end_article = ""
     if len(sys.argv) == 3:
-        start_article = sys.argv[1]
-        end_article = sys.argv[2]
+        start_article = process_wiki_article(sys.argv[1])
+        end_article = process_wiki_article(sys.argv[2])
     else:
         # get start article
         start_article = get_user_input("Enter the starting article:")

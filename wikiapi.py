@@ -70,10 +70,14 @@ def getLinksInLead(page: str, valid_links):
     page_text = DATA["parse"]["text"]["*"]
     soup = BeautifulSoup(page_text,features="html.parser")
     div_zone = soup.select("div.mw-content-ltr.mw-parser-output p")
-    # print(div_zone)
+    infobox_zone = soup.select("table.infobox")
+    for data in infobox_zone:
+        for link in data.select("a[href]"):
+            if "/wiki/" in link['href'] and not "File:" in link['href'] and not "Help:" in link["href"]:
+                valid_links.append({'ns':0,'exists':'','*':link['href'].replace("/wiki/","").replace("_"," ")})
     for paragraph in div_zone:
         for link in paragraph.select("a[href]"):
-            if "/wiki/" in link['href']:
+            if "/wiki/" in link['href'] and not "File:" in link['href'] and not "Help:" in link["href"]:
                 valid_links.append({'ns':0,'exists':'','*':link['href'].replace("/wiki/","").replace("_"," ")})
     
 

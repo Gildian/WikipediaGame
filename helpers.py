@@ -1,6 +1,7 @@
 import torch
 import torchtext
 from wikiapi import getAllValidLinks, getPageDetails
+import re
 
 def create_embeddings():
     return torchtext.vocab.GloVe(name="6B", dim=300)
@@ -38,9 +39,11 @@ def get_user_input(prompt):
     user_input = input(prompt)
     return process_wiki_article(user_input)
 
-def get_word_score(target, unit): # function for getting the score of two words
+def get_word_score(target: str, unit: str): # function for getting the score of two words
+    unit,_ = re.subn('\\(|\\)',"",unit)
     # split target here to prevent repetition in code
     unsqueezed_unit = glove[unit.lower()].unsqueeze(0)
+    target,_ = re.subn('\\(|\\)',"",target)
     target_split = target.split()
     target_score = 0
     target_count = 0
@@ -83,6 +86,7 @@ def get_closest_links(page, goal_page, path_taken):
                 print(link["*"], float(converted_score))
     if len(best_links) == 0:
         print("COULD NOT FIND NEXT PAGE")
+        print("Last page:",page)
         exit()
     return sorted(best_links, key=lambda tup: tup[1], reverse=True)
 
@@ -124,5 +128,6 @@ def get_closest_link(page, goal_page, path_taken):
         print("printing closest match:", closest_match)
     if closest_match[0] == "":
         print("COULD NOT FIND NEXT PAGE")
+        print("Last page:",page)
         exit()
     return closest_match
