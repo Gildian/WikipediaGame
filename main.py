@@ -4,20 +4,22 @@ from helpers import get_user_input
 import time
 
 if __name__ == "__main__":
-    # get start article
-    start_article = get_user_input("Enter the starting article:")
-    
-    # get end article
-    end_article = get_user_input("Enter the ending article:")
-    
+    start_article = ""
+    end_article = ""
+    if len(sys.argv) == 3:
+        start_article = sys.argv[1]
+        end_article = sys.argv[2]
+    else:
+        # get start article
+        start_article = get_user_input("Enter the starting article:")
+        # get end article
+        end_article = get_user_input("Enter the ending article:")
+
     depth = 100
-
     print(f"Finding a path from {start_article} to {end_article} (within {depth} steps)")
-    
     path_taken = [start_article]
-
+    
     # Uncomment the algo you want to use
-
     start = time.time()
     sys.stdout.write("Processing Best First Search: ")
     start = time.time()

@@ -8,7 +8,7 @@ def create_embeddings():
 glove = create_embeddings()
 
 
-DEBUG_MODE = False  # Set this to True for debug output, such as search results, scores, and more clerical info. 
+DEBUG_MODE = True  # Set this to True for debug output, such as search results, scores, and more clerical info. 
 
 def spinning_cursor():
     while True:

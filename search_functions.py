@@ -15,22 +15,24 @@ def best_first_search(start_page, goal_page, beam_width=3):
         sys.stdout.flush()  # code to add a spinner to the console so the user can tell its working
         current_pages = heapq.heappop(queue)  # get the pages with the highest priority
         score, current_page_list = current_pages
+        if DEBUG_MODE: print(current_page_list)
         page_details = getPageDetails(current_page_list[-1])
-        current_page_list[-1] = page_details["title"]
-        if page_details["title"].lower() == goal_page.lower():  # if the current page is the goal page, return the path
-            return current_page_list
-        current_page = page_details["title"]
-        if current_page not in visited:  # if the current page has not been visited
-            visited.add(current_page)  # mark the current page as visited
-            closest_links = get_closest_links(current_page, goal_page, current_page_list)  # find the next best page
-            for links in closest_links:
-                new_score = score - links[1]
-                new_list = current_page_list.copy()
-                new_list.append(links[0])
-                new_score = new_score / len(new_list)
-                if DEBUG_MODE: print(new_score,new_list)
-                if new_score < 0:
-                    heapq.heappush(queue, (new_score, new_list))  # add the next page to the priority queue
+        if page_details["exists"]:
+            current_page_list[-1] = page_details["title"]
+            if page_details["title"].lower() == goal_page.lower():  # if the current page is the goal page, return the path
+                return current_page_list
+            current_page = page_details["title"]
+            if current_page not in visited:  # if the current page has not been visited
+                visited.add(current_page)  # mark the current page as visited
+                closest_links = get_closest_links(current_page, goal_page, current_page_list)  # find the next best page
+                for links in closest_links:
+                    new_score = score - links[1]
+                    new_list = current_page_list.copy()
+                    new_list.append(links[0])
+                    new_score = new_score / len(new_list)
+                    if DEBUG_MODE: print(new_score,new_list)
+                    if new_score < 0:
+                        heapq.heappush(queue, (new_score, new_list))  # add the next page to the priority queue
     print("QUEUE EMPTY WITHOUT SOLUTION")
     exit()
 
