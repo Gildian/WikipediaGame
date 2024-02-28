@@ -59,18 +59,25 @@ def getLinksBySection(page: str, section: int, valid_links):
 
 def getLinksInLead(page: str, valid_links):
     PARAMS = {
-        "action":"parse",
+        "action":"query",
         "format":"json",
-        "prop":"text",
-        "page":page,
+        "prop":"info",
+        "titles":page,
         "redirects":"",
-        "section":"0"
+        "indexpageids":"",
+        "inprop":"url"
     }
     DATA = make_request(PARAMS)
-    page_text = DATA["parse"]["text"]["*"]
-    soup = BeautifulSoup(page_text,features="html.parser")
+    page_text = DATA["query"]["pages"][DATA["query"]["pageids"][0]]["fullurl"]
+    full_page = session.get(url=page_text)
+    soup = BeautifulSoup(full_page.text,features="html.parser")
     div_zone = soup.select("div.mw-content-ltr.mw-parser-output p")
     infobox_zone = soup.select("table.infobox")
+    wikitable_zone = soup.select("table.wikitable")
+    for data in wikitable_zone:
+        for link in data.select("a[href]"):
+            if "/wiki/" in link['href'] and not "File:" in link['href'] and not "Help:" in link["href"]:
+                valid_links.append({'ns':0,'exists':'','*':link['href'].replace("/wiki/","").replace("_"," ")})
     for data in infobox_zone:
         for link in data.select("a[href]"):
             if "/wiki/" in link['href'] and not "File:" in link['href'] and not "Help:" in link["href"]:
