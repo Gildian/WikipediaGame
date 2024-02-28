@@ -1,5 +1,5 @@
 import sys 
-from search_functions import best_first_search, solve_wiki_game # , greedy_search
+from search_functions import best_first_search, depth_first_search # , greedy_search
 from helpers import get_user_input
 import time
 
@@ -17,6 +17,7 @@ if __name__ == "__main__":
     path_taken = [start_article]
 
     # Uncomment the algo you want to use
+
     start = time.time()
     sys.stdout.write("Processing Best First Search: ")
     start = time.time()
@@ -25,9 +26,9 @@ if __name__ == "__main__":
     print("That took",end-start,"seconds")
 
     start = time.time()
-    sys.stdout.write("Processing Closest Page: ")
+    sys.stdout.write("Processing Depth First Search: ")
     start = time.time()
-    print("\n",solve_wiki_game(start_article, end_article, depth, path_taken))
+    print("\n",depth_first_search(start_article, end_article, depth, path_taken))
     end = time.time()
     print("That took",end-start,"seconds")
 

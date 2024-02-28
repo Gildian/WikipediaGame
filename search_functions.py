@@ -3,27 +3,6 @@ from helpers import get_closest_links,get_closest_link, spinner, DEBUG_MODE #, g
 import sys
 from wikiapi import getPageDetails
 
-# def greedy_search(start_page, goal_page):
-#     queue = []
-#     heapq.heappush(queue, (0, [start_page]))  # priority queue to store the pages to be explored
-#     visited = set()  # set to store the visited pages
-#     while queue:
-#         sys.stdout.write('\b')
-#         sys.stdout.write(next(spinner))
-#         sys.stdout.flush()  # code to add a spinner to the console so the user can tell its working
-#         _, current_page_list = heapq.heappop(queue)  # get the page with the highest priority
-#         current_page = current_page_list[-1][0].lower()  # extract the string from the tuple and convert to lowercase
-#         if current_page == goal_page.lower():  # if the current page is the goal page, return the path
-#             return current_page_list
-#         if current_page not in visited:  # if the current page has not been visited
-#             visited.add(current_page)  # mark the current page as visited
-#             closest_link = get_closest_links_greedy(current_page, goal_page, current_page_list)  # find the next best page
-#             new_list = current_page_list.copy()
-#             new_list.append(closest_link[0])
-#             heapq.heappush(queue, (closest_link[1], new_list))  # add the next page to the priority queue
-#             visited.add(closest_link[0][0].lower())  # mark the next page as visited
-#     print("QUEUE EMPTY WITHOUT SOLUTION")
-#     exit()
 
 def best_first_search(start_page, goal_page, beam_width=3):
     queue = []
@@ -55,7 +34,7 @@ def best_first_search(start_page, goal_page, beam_width=3):
     print("QUEUE EMPTY WITHOUT SOLUTION")
     exit()
 
-def solve_wiki_game(current_page, end_page, depth, path_taken): # recursive function for solving the game, it is what is called to get the search started
+def depth_first_search(current_page, end_page, depth, path_taken): # recursive function for solving the game, it is what is called to get the search started
     sys.stdout.write('\b')
     sys.stdout.write(next(spinner))
     sys.stdout.flush()  # code to add a spinner to the console so the user can tell its working
@@ -71,4 +50,26 @@ def solve_wiki_game(current_page, end_page, depth, path_taken): # recursive func
     if closest_link[0].lower() == end_page.lower(): # case for if the closest link is our solution to the game
         return path_taken
     else:
-        return solve_wiki_game(closest_link[0], end_page, depth, path_taken)    # recursive call to check the next level for a result
+        return depth_first_search(closest_link[0], end_page, depth, path_taken)    # recursive call to check the next level for a result
+
+# def greedy_search(start_page, goal_page):
+#     queue = []
+#     heapq.heappush(queue, (0, [start_page]))  # priority queue to store the pages to be explored
+#     visited = set()  # set to store the visited pages
+#     while queue:
+#         sys.stdout.write('\b')
+#         sys.stdout.write(next(spinner))
+#         sys.stdout.flush()  # code to add a spinner to the console so the user can tell its working
+#         _, current_page_list = heapq.heappop(queue)  # get the page with the highest priority
+#         current_page = current_page_list[-1][0].lower()  # extract the string from the tuple and convert to lowercase
+#         if current_page == goal_page.lower():  # if the current page is the goal page, return the path
+#             return current_page_list
+#         if current_page not in visited:  # if the current page has not been visited
+#             visited.add(current_page)  # mark the current page as visited
+#             closest_link = get_closest_links_greedy(current_page, goal_page, current_page_list)  # find the next best page
+#             new_list = current_page_list.copy()
+#             new_list.append(closest_link[0])
+#             heapq.heappush(queue, (closest_link[1], new_list))  # add the next page to the priority queue
+#             visited.add(closest_link[0][0].lower())  # mark the next page as visited
+#     print("QUEUE EMPTY WITHOUT SOLUTION")
+#     exit()

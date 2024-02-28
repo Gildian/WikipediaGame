@@ -1,24 +1,37 @@
 import requests
 import concurrent.futures
 
-DEBUG_MODE = False
+DEBUG_MODE = True
 
 URL = "https://en.wikipedia.org/w/api.php"
 BLACKLISTED_SECTIONS = ["References", "External links"]
 session = requests.Session()
 
+ACTION = "action"
+FORMAT = "format"
+JSON = "json"
+REDIRECTS = "redirects"
+
+def make_request(params):
+    try:
+        response = session.get(url=URL, params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.HTTPError as http_err:
+        print(f'HTTP error occurred: {http_err}')
+    except Exception as err:
+        print(f'Other error occurred: {err}')
+
 def getPageDetails(page: str):
     PARAMS = {
-        "action": "query",
+        ACTION: "query",
         "titles": page,
-        "format": "json",
+        FORMAT: JSON,
         "indexpageids":"",
         "prop":"categories",
-        "redirects":""
+        REDIRECTS:""
     }
-    response = session.get(url=URL, params=PARAMS)
-    DATA = response.json()
-    if DEBUG_MODE: print("printing date for page:",page,"\n",DATA)
+    DATA = make_request(PARAMS)
     clean_data = {}
     clean_data["exists"] = True if DATA["query"]["pageids"][0] != '-1' else False
     if clean_data["exists"]: clean_data["title"] = DATA["query"]["pages"][DATA["query"]["pageids"][0]]["title"]
@@ -27,47 +40,32 @@ def getPageDetails(page: str):
 
 def getAllSections(page: str):
     PARAMS = {
-        "action": "parse",
+        ACTION: "parse",
         "page": page,
         "prop": "sections",
-        "format": "json",
-        "redirects":""
+        FORMAT: JSON,
+        REDIRECTS:""
     }
-    response = session.get(url=URL, params=PARAMS)
-    DATA = response.json()
-    if DEBUG_MODE: print("printing data for:",page,"\n",DATA)
-    if DEBUG_MODE: print(DATA["parse"]["sections"])
+    DATA = make_request(PARAMS)
     return DATA["parse"]["sections"]
 
 def getLinksBySection(page: str, section: int, valid_links):
     PARAMS = {
-        "action": "parse",
+        ACTION: "parse",
         "page": page,
         "prop": "links",
         "section": section,
-        "format": "json",
-        "redirects":""
+        FORMAT: JSON,
+        REDIRECTS:""
     }
-    response = session.get(url=URL, params=PARAMS)
-    DATA = response.json()
-    for link in DATA["parse"]["links"]:
-        if link["ns"] == 0:
-            valid_links.append(link)
+    DATA = make_request(PARAMS)
+    valid_links.extend([link for link in DATA["parse"]["links"] if link["ns"] == 0])
 
 def getAllValidLinks(page: str):
     valid_links = []
     sections = getAllSections(page)
-    if DEBUG_MODE: print("Getting all valid URLS in ", len(sections), " sections")
-    pool = concurrent.futures.ThreadPoolExecutor(max_workers=25)
-    section_index = 0
-    for section in sections:
-        if section["line"] in BLACKLISTED_SECTIONS:
-            section_index += 1
-            continue
-        else:
-            pool.submit(getLinksBySection, page, section_index, valid_links)
-            section_index += 1
-            if DEBUG_MODE: print("submitted to queue")
-    pool.shutdown(wait=True)
-    if DEBUG_MODE: print("Pool empty, current list:", valid_links)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=25) as executor:
+        for i, section in enumerate(sections):
+            if section["line"] not in BLACKLISTED_SECTIONS:
+                executor.submit(getLinksBySection, page, i, valid_links)
     return valid_links
