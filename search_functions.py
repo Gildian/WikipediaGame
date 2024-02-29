@@ -13,7 +13,7 @@ def best_first_search(start_page, goal_page, start_time):
     while len(queue) != 0:
         if DEBUG_MODE: print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         if time.time() - start_time >= 120:
-            print("Time limit exceeded! Best First could not find solution within 120 seconds")
+            print("\nTime limit exceeded! Best First could not find solution within 120 seconds")
             return "NO SOLUTION"
         sys.stdout.write('\b')
         sys.stdout.write(next(spinner))
@@ -45,7 +45,7 @@ def best_first_search(start_page, goal_page, start_time):
 # Depth first usually finds a path quickly, but it will not always be the shortest
 def depth_first_search(current_page, end_page, path_taken, start_time): # recursive function for solving the game, it is what is called to get the search started
     if time.time() - start_time >= 120:
-            print("Time limit exceeded! Best First could not find solution within 120 seconds")
+            print("\nTime limit exceeded! Depth First could not find solution within 120 seconds")
             return "NO SOLUTION"
     sys.stdout.write('\b')
     sys.stdout.write(next(spinner))
