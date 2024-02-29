@@ -4,6 +4,8 @@ import sys
 from wikiapi import getPageDetails
 import time
 
+TIME_LIMIT = 120 # max amount of time an algorithm will be allowed to search for in seconds
+
 # Best first uses a queue to store the current best path, and will keep switching to the best option if the current path becomes worse
 # This usually finds a short path at the cost of taking longer
 def best_first_search(start_page, goal_page, start_time):
@@ -12,8 +14,8 @@ def best_first_search(start_page, goal_page, start_time):
     visited = set()  # set to store the visited pages
     while len(queue) != 0:
         if DEBUG_MODE: print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        if time.time() - start_time >= 120:
-            print("\nTime limit exceeded! Best First could not find solution within 120 seconds")
+        if time.time() - start_time >= TIME_LIMIT:
+            print(f"\nTime limit exceeded! Best First could not find solution within {TIME_LIMIT} seconds")
             return "NO SOLUTION"
         sys.stdout.write('\b')
         sys.stdout.write(next(spinner))
@@ -44,8 +46,8 @@ def best_first_search(start_page, goal_page, start_time):
 # Depth first searches the page for the best link and follows it. Depth first does not back track, and will keep going until it finds a solution or runs out of pages.
 # Depth first usually finds a path quickly, but it will not always be the shortest
 def depth_first_search(current_page, end_page, path_taken, start_time): # recursive function for solving the game, it is what is called to get the search started
-    if time.time() - start_time >= 120:
-            print("\nTime limit exceeded! Depth First could not find solution within 120 seconds")
+    if time.time() - start_time >= TIME_LIMIT:
+            print(f"\nTime limit exceeded! Depth First could not find solution within {TIME_LIMIT} seconds")
             return "NO SOLUTION"
     sys.stdout.write('\b')
     sys.stdout.write(next(spinner))

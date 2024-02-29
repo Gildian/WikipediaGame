@@ -1,13 +1,19 @@
 import sys 
 from search_functions import best_first_search, depth_first_search
 from helpers import get_user_input, process_wiki_article, validateWord
+from wikiapi import getTwoRandomPages
 import time
 
 if __name__ == "__main__":
     start_article = ""
     end_article = ""
 
-    if len(sys.argv) == 3:
+    if len(sys.argv) == 2 and sys.argv[1] == "random":
+        # get two random articles
+        pages = getTwoRandomPages()
+        start_article = pages[0]["title"]
+        end_article = pages[1]["title"]
+    elif len(sys.argv) == 3:
         start_article = process_wiki_article(sys.argv[1])
         end_article = process_wiki_article(sys.argv[2])
     else:

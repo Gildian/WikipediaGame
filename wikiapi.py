@@ -18,6 +18,17 @@ def make_request(params):
     except Exception as err:
         print(f'Other error occurred: {err}')
 
+def getTwoRandomPages():
+    PARAMS = {
+        "action":"query",
+        "format":"json",
+        "list":"random",
+        "rnlimit":"2",
+        "rnnamespace":"0"
+    }
+    DATA = make_request(PARAMS)
+    return DATA["query"]["random"]
+
 def getPageDetails(page: str):
     PARAMS = {
         "action": "query",
