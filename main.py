@@ -1,5 +1,5 @@
 import sys 
-from search_functions import best_first_search, depth_first_search # , greedy_search
+from search_functions import best_first_search, depth_first_search
 from helpers import get_user_input, process_wiki_article, validateWord
 import time
 
@@ -42,6 +42,3 @@ if __name__ == "__main__":
     end = time.time()
     if result != "NO SOLUTION":
         print("That took",round(end-start),"seconds and found a solution",len(result),"articles long")
-
-    # sys.stdout.write("Processing Greedy Search: ")
-    # print("\n",greedy_search(start_article.lower(), end_article.lower()))

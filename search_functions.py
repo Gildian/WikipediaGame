@@ -1,9 +1,11 @@
 import heapq
-from helpers import get_closest_links,get_closest_link, spinner, DEBUG_MODE #, get_closest_links_greedy
+from helpers import get_closest_links,get_closest_link, spinner, DEBUG_MODE
 import sys
 from wikiapi import getPageDetails
 import time
 
+# Best first uses a queue to store the current best path, and will keep switching to the best option if the current path becomes worse
+# This usually finds a short path at the cost of taking longer
 def best_first_search(start_page, goal_page, start_time):
     queue = []
     heapq.heappush(queue, (0, [start_page]))  # priority queue to store the pages to be explored
@@ -39,6 +41,8 @@ def best_first_search(start_page, goal_page, start_time):
     print("QUEUE EMPTY WITHOUT SOLUTION")
     exit()
 
+# Depth first searches the page for the best link and follows it. Depth first does not back track, and will keep going until it finds a solution or runs out of pages.
+# Depth first usually finds a path quickly, but it will not always be the shortest
 def depth_first_search(current_page, end_page, path_taken, start_time): # recursive function for solving the game, it is what is called to get the search started
     if time.time() - start_time >= 120:
             print("Time limit exceeded! Best First could not find solution within 120 seconds")
@@ -55,25 +59,3 @@ def depth_first_search(current_page, end_page, path_taken, start_time): # recurs
         return path_taken
     else:
         return depth_first_search(closest_link[0], end_page, path_taken, start_time)    # recursive call to check the next level for a result
-
-# def greedy_search(start_page, goal_page):
-#     queue = []
-#     heapq.heappush(queue, (0, [start_page]))  # priority queue to store the pages to be explored
-#     visited = set()  # set to store the visited pages
-#     while queue:
-#         sys.stdout.write('\b')
-#         sys.stdout.write(next(spinner))
-#         sys.stdout.flush()  # code to add a spinner to the console so the user can tell its working
-#         _, current_page_list = heapq.heappop(queue)  # get the page with the highest priority
-#         current_page = current_page_list[-1][0].lower()  # extract the string from the tuple and convert to lowercase
-#         if current_page == goal_page.lower():  # if the current page is the goal page, return the path
-#             return current_page_list
-#         if current_page not in visited:  # if the current page has not been visited
-#             visited.add(current_page)  # mark the current page as visited
-#             closest_link = get_closest_links_greedy(current_page, goal_page, current_page_list)  # find the next best page
-#             new_list = current_page_list.copy()
-#             new_list.append(closest_link[0])
-#             heapq.heappush(queue, (closest_link[1], new_list))  # add the next page to the priority queue
-#             visited.add(closest_link[0][0].lower())  # mark the next page as visited
-#     print("QUEUE EMPTY WITHOUT SOLUTION")
-#     exit()
