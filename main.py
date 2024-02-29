@@ -15,26 +15,28 @@ if __name__ == "__main__":
         # get end article
         end_article = get_user_input("Enter the ending article:")
 
-    depth = 100
     print(f"Finding a path from {start_article} to {end_article}")
-    path_taken = [start_article]
 
-    # Uncomment the algo you want to use
+    # Best First Search
     start = time.time()
     sys.stdout.write("Processing Best First Search: ")
     start = time.time()
-    result = best_first_search(start_article, end_article)
+    result = best_first_search(start_article, end_article, start)
     print("\n",result)
     end = time.time()
-    print("That took",round(end-start),"seconds and found a solution",len(result),"articles long")
+    if result != "NO SOLUTION":
+        print("That took",round(end-start),"seconds and found a solution",len(result),"articles long")
 
+    # Depth First Search
     start = time.time()
     sys.stdout.write("Processing Depth First Search: ")
     start = time.time()
-    result = depth_first_search(start_article, end_article, depth, path_taken)
+    path_taken = [start_article]
+    result = depth_first_search(start_article, end_article, path_taken, start)
     print("\n",result)
     end = time.time()
-    print("That took",round(end-start),"seconds and found a solution",len(result),"articles long")
+    if result != "NO SOLUTION":
+        print("That took",round(end-start),"seconds and found a solution",len(result),"articles long")
 
     # sys.stdout.write("Processing Greedy Search: ")
     # print("\n",greedy_search(start_article.lower(), end_article.lower()))

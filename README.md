@@ -6,6 +6,7 @@ As stated above the GloVe vectors are required.
 Python Dependencies:
 * torch
 * torchtext
+* BeautifulSoup
 
 ## Running The Bot
 After downloading all dependencies simply running the `main.py` file will start the bot. The first time the bot runs it will calculate the vector cache, which may take some time. After it is done the bot will prompt for input.

@@ -40,10 +40,10 @@ def get_user_input(prompt):
     return process_wiki_article(user_input)
 
 def get_word_score(target: str, unit: str): # function for getting the score of two words
-    unit,_ = re.subn('\\(|\\)|\\\'|\\\"',"",unit)
+    unit,_ = re.subn('\\(|\\)|\\\'|\\\"|\\-',"",unit)
     # split target here to prevent repetition in code
     unsqueezed_unit = glove[unit.lower()].unsqueeze(0)
-    target,_ = re.subn('\\(|\\)|\\\'|\\\"',"",target)
+    target,_ = re.subn('\\(|\\)|\\\'|\\\"|\\-',"",target)
     target_split = target.split()
     target_score = 0
     target_count = 0
