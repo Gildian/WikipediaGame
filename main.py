@@ -1,11 +1,12 @@
 import sys 
 from search_functions import best_first_search, depth_first_search # , greedy_search
-from helpers import get_user_input, process_wiki_article
+from helpers import get_user_input, process_wiki_article, validateWord
 import time
 
 if __name__ == "__main__":
     start_article = ""
     end_article = ""
+
     if len(sys.argv) == 3:
         start_article = process_wiki_article(sys.argv[1])
         end_article = process_wiki_article(sys.argv[2])
@@ -14,7 +15,11 @@ if __name__ == "__main__":
         start_article = get_user_input("Enter the starting article:")
         # get end article
         end_article = get_user_input("Enter the ending article:")
-
+    
+    if not validateWord(end_article):
+        print("End Article not present in GloVe vectors! Solution impossible to find!")
+        exit()
+    
     print(f"Finding a path from {start_article} to {end_article}")
 
     # Best First Search
