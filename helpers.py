@@ -41,27 +41,33 @@ def validateWord(goal: str):
             return True
     return False
 
-def get_word_score(target: str, unit: str): # function for getting the score of two words
-    unit,_ = re.subn('\\(|\\)|\\\'|\\\"|\\-',"",unit) # sanitize unit
-    unit_split = unit.lower().split()
-    target,_ = re.subn('\\(|\\)|\\\'|\\\"|\\-',"",target)
-    target_split = target.lower().split()
-    word_score = 0
-    word_count = 0 # these variables will be used for calulating the score of the two words
-    for target_name in target_split:
-        if target_name in glove:
-            for unit_name in unit_split:
-                if unit_name in glove:
-                    # Get unsqueezed tenors of both names, which we know exist because of the previous if statements
-                    unsqueezed_target = glove[target_name].unsqueeze(0)
-                    unsqueezed_unit = glove[unit_name].unsqueeze(0)
-                    score = torch.nn.functional.cosine_similarity(unsqueezed_target, unsqueezed_unit) # will give a result since both words are in glove vectors
-                    word_score += score
-                    word_count += 1
-            
-    converted_score = 0
-    if word_count != 0:
-        converted_score = word_score / word_count # gets the average score which should always be between 1 and -1, in if statement to prevent divide by 0 error
+def get_word_score(target: str, unit: str):
+    # Sanitize input strings
+    unit = re.sub('\\(|\\)|\\\'|\\\"|\\-', "", unit)
+    target = re.sub('\\(|\\)|\\\'|\\\"|\\-', "", target)
+
+    # Split strings into individual words
+    unit_split = [word for word in unit.lower().split() if word in glove]
+
+    # Check if the target is in the glove dictionary
+    if target.lower() in glove:
+        target_vectors = [glove[target.lower()]]
+    else:
+        # If the target is not in the glove dictionary, split it into individual words
+        target_split = [word for word in target.lower().split() if word in glove]
+        if len(target_split) > 1:
+            # If the target is multiple words, calculate the average of their vectors
+            target_vectors = [torch.mean(torch.stack([glove[word] for word in target_split]), dim=0)]
+        else:
+            target_vectors = [glove[word] for word in target_split]
+
+    # Calculate word scores
+    scores = [torch.nn.functional.cosine_similarity(target_vector.unsqueeze(0), glove[unit_name].unsqueeze(0))
+              for target_vector in target_vectors for unit_name in unit_split]
+
+    # Calculate average score
+    converted_score = sum(scores) / len(scores) if scores else 0
+
     return converted_score
 
 blacklist_words = ["wikipedia:", "template:", "category:", "template talk:", "(disambiguation)"] # these are pages that we want to avoid since they give bad data
