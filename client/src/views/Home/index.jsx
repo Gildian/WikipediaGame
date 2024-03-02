@@ -5,9 +5,12 @@ function Home() {
   const [clicks, setClicks] = useState('3');
   const [timeTaken, setTimeTaken] = useState('Press Go!');
   const [pathData, setPathData] = useState(['Apple TV', 'Papa Johns', 'Pizza']);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [startTitle, setStartTitle] = useState('Minecraft');
   const [endTitle, setEndTitle] = useState('Pizza');
+
+  // this changes once data is being loaded/bot running
+  const [newPage, setNewPage] = useState(true);
 
   const path = useMemo((() => {
       let text = '';
