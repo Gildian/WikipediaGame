@@ -4,10 +4,7 @@ from helpers import get_user_input, process_wiki_article, validateWord
 from wikiapi import getTwoRandomPages
 import time
 
-if __name__ == "__main__":
-    start_article = ""
-    end_article = ""
-
+def get_articles():
     if len(sys.argv) == 2 and sys.argv[1] == "random":
         # get two random articles
         pages = getTwoRandomPages()
@@ -21,30 +18,28 @@ if __name__ == "__main__":
         start_article = get_user_input("Enter the starting article:")
         # get end article
         end_article = get_user_input("Enter the ending article:")
-    
+    return start_article, end_article
+
+def perform_search(search_function, start_article, end_article):
+    print(f"Finding a path from {start_article} to {end_article}")
+    start_time = time.time()
+    sys.stdout.write(f"Processing {search_function.__name__}: ")
+    path_taken = [start_article]
+    if search_function == best_first_search:
+        search_result = search_function(start_article, end_article, start_time)
+    else:
+        search_result = search_function(start_article, end_article, path_taken, start_time)
+    print("\n", search_result)
+    end_time = time.time()
+    if search_result != "NO SOLUTION":
+        print("That took",round(end_time-start_time),"seconds and found a solution",len(search_result),"articles long")
+
+if __name__ == "__main__":
+    start_article, end_article = get_articles()
+
     if not validateWord(end_article):
         print("End Article not present in GloVe vectors! Solution impossible to find!")
         exit()
-    
-    print(f"Finding a path from {start_article} to {end_article}")
 
-    # Best First Search
-    start = time.time()
-    sys.stdout.write("Processing Best First Search: ")
-    start = time.time()
-    result = best_first_search(start_article, end_article, start)
-    print("\n",result)
-    end = time.time()
-    if result != "NO SOLUTION":
-        print("That took",round(end-start),"seconds and found a solution",len(result),"articles long")
-
-    # Depth First Search
-    start = time.time()
-    sys.stdout.write("Processing Depth First Search: ")
-    start = time.time()
-    path_taken = [start_article]
-    result = depth_first_search(start_article, end_article, path_taken, start)
-    print("\n",result)
-    end = time.time()
-    if result != "NO SOLUTION":
-        print("That took",round(end-start),"seconds and found a solution",len(result),"articles long")
+    perform_search(best_first_search, start_article, end_article)
+    perform_search(depth_first_search, start_article, end_article)
