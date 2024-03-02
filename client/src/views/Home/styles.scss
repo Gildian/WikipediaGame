@@ -1,0 +1,185 @@
+@use "../../utils/globals.scss" as *;
+
+.homePage {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+
+  height: 96vh;
+  padding: 2vh 0 2vh 0;
+
+  color: $primaryText;
+  font-family: LittleCaeser;
+
+  h1 {
+    margin: 0;
+    font-size: 6rem;
+
+    -webkit-text-stroke: 2px $secondaryColor;
+    text-shadow: -6px 6px 4px rgb(0, 0, 0);
+  }
+
+  main {
+    display: flex;
+
+    height: 100%;
+    width: 76%;
+
+    .centerSection {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      flex-direction: column;
+
+      width: 100%;
+
+      #pathForm {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-direction: row;
+
+        width: 100%;
+        margin-top: 2%;
+
+        input {
+          width: 38%;
+          height: 60%;
+
+          padding-left: .6%;
+
+          background-color: $primaryColor;
+
+          font-size: 2rem;
+          font-family: LittleCaeser;
+          color: $secondaryText;
+
+          border-radius: $borderRadius;
+          border: $borderWidth solid $secondaryColor;
+        }
+
+        input:focus {
+            outline: 2px solid $primaryColor;
+        }
+
+        p {
+          margin: 0;
+          font-size: 4rem;
+        }
+
+        button {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: none;
+          border: none;
+          border-radius: $borderRadius;
+
+          height: 65%;
+          width: 10%;
+
+          font-family: LittleCaeser;
+          font-size: 2.8rem;
+          color: $primaryText;
+          background-color: $secondaryColor;
+        }
+
+        button:hover {
+          background-color: #005491;
+          cursor: pointer;
+        }
+      }
+      .botInfo {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        
+        width: 100%;
+        height: 26%;
+
+        margin-top: 1%;
+
+        border-radius: $borderRadius;
+        border: $borderWidth solid $secondaryColor;
+        background-color: $primaryColor;
+
+        .infoHeader {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+
+            width: 100%;
+            height: 45%;
+            
+            border-bottom: $borderWidth solid $secondaryColor;
+
+            p {
+                margin: 0;
+                font-size: 2.8rem;
+            }
+        }
+        .pathInfo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            height: 100%;
+            width: 100%;
+
+            .path {
+                margin: 0;
+                font-size: 2.4rem;
+                height: 96%;
+                width: 98%;
+
+                overflow-wrap: break-word;
+            }
+        }
+      }
+      .wikiPages {
+        display: flex;
+        justify-content: space-between;
+
+        height: 58%;
+        width: 100%;
+
+        margin-top: 2%;
+
+        iframe {
+            height: 100%;
+            width: 45%;
+
+            border-radius: $borderRadius;
+            border: $borderWidth solid $secondaryColor;
+
+            background-color: $primaryColor;
+        }
+
+        p {
+          margin: 0;
+        }
+
+        .newPageText1 {
+          position: absolute;
+          left: 28.8%;
+          top: 74%;
+          transform: translate(-50%, -50%);
+
+          font-size: 6rem;
+          display: none;
+        }
+        .newPageText2 {
+          position: absolute;
+          right: 21.2%;
+          top: 74%;
+          transform: translate(-50%, -50%);
+
+          font-size: 6rem;
+          display: none;
+        }
+      }
+    }
+  }
+}
