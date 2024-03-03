@@ -6,7 +6,6 @@ import time
 
 def get_articles():
     if len(sys.argv) == 2 and sys.argv[1] == "random":
-        # get two random articles
         pages = getTwoRandomPages()
         start_article = pages[0]["title"]
         end_article = pages[1]["title"]
@@ -14,13 +13,11 @@ def get_articles():
         start_article = process_wiki_article(sys.argv[1])
         end_article = process_wiki_article(sys.argv[2])
     else:
-        # get start article
         start_article = get_user_input("Enter the starting article:")
-        # get end article
         end_article = get_user_input("Enter the ending article:")
     return start_article, end_article
 
-def perform_search(search_function, start_article, end_article):
+def perform_search(search_function, start_article, end_article, file):
     print(f"Finding a path from {start_article} to {end_article}")
     start_time = time.time()
     sys.stdout.write(f"Processing {search_function.__name__}: ")
@@ -32,7 +29,12 @@ def perform_search(search_function, start_article, end_article):
     print("\n", search_result)
     end_time = time.time()
     if search_result != "NO SOLUTION":
-        print("That took",round(end_time-start_time),"seconds and found a solution",len(search_result),"articles long")
+        print("That took", round(end_time - start_time), "seconds and found a solution", len(search_result), "articles long")
+
+    file.write(f"{search_function.__name__}: ")
+    file.write(str(search_result))
+    file.write(f"\n That took {round(end_time - start_time)} seconds and found a solution {len(search_result)} articles long")
+    file.write("\n\n")
 
 if __name__ == "__main__":
     start_article, end_article = get_articles()
@@ -41,5 +43,8 @@ if __name__ == "__main__":
         print("End Article not present in GloVe vectors! Solution impossible to find!")
         exit()
 
-    perform_search(best_first_search, start_article, end_article)
-    perform_search(depth_first_search, start_article, end_article)
+    with open("path.txt", "w") as file:
+        file.write(f"Start Article: {start_article}\nEnd Article: {end_article}\n\n")
+        
+        perform_search(best_first_search, start_article, end_article, file)
+        perform_search(depth_first_search, start_article, end_article, file)
