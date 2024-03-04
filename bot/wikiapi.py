@@ -1,12 +1,15 @@
+import logging
 import requests
-import concurrent.futures
 from bs4 import BeautifulSoup
+
+import concurrent.futures
 
 DEBUG_MODE = False
 
 URL = "https://en.wikipedia.org/w/api.php"
 BLACKLISTED_SECTIONS = ["References", "External links"]
 session = requests.Session()
+logger = logging.getLogger(__name__)
 
 def make_request(params):
     try:
@@ -14,17 +17,17 @@ def make_request(params):
         response.raise_for_status()
         return response.json()
     except requests.HTTPError as http_err:
-        print(f'HTTP error occurred: {http_err}')
+        logger.error(f'HTTP error occurred: {http_err}')
     except Exception as err:
-        print(f'Other error occurred: {err}')
+        logger.error(f'Other error occurred: {err}')
 
 def getTwoRandomPages():
     PARAMS = {
-        "action":"query",
-        "format":"json",
-        "list":"random",
-        "rnlimit":"2",
-        "rnnamespace":"0"
+        "action": "query",
+        "format": "json",
+        "list": "random",
+        "rnlimit": "2",
+        "rnnamespace": "0"
     }
     DATA = make_request(PARAMS)
     return DATA["query"]["random"]
@@ -34,15 +37,16 @@ def getPageDetails(page: str):
         "action": "query",
         "titles": page,
         "format": "json",
-        "indexpageids":"",
-        "prop":"categories",
-        "redirects":""
+        "indexpageids": "",
+        "prop": "categories",
+        "redirects": ""
     }
     DATA = make_request(PARAMS)
     clean_data = {}
     clean_data["exists"] = True if DATA["query"]["pageids"][0] != '-1' else False
-    if clean_data["exists"]: clean_data["title"] = DATA["query"]["pages"][DATA["query"]["pageids"][0]]["title"]
-    if clean_data["exists"]: clean_data["categories"] = DATA["query"]["pages"][DATA["query"]["pageids"][0]]["categories"]
+    if clean_data["exists"]:
+        clean_data["title"] = DATA["query"]["pages"][DATA["query"]["pageids"][0]]["title"]
+        clean_data["categories"] = DATA["query"]["pages"][DATA["query"]["pageids"][0]]["categories"]
     return clean_data
 
 def getAllSections(page: str):
@@ -51,7 +55,7 @@ def getAllSections(page: str):
         "page": page,
         "prop": "sections",
         "format": "json",
-        "redirects":""
+        "redirects": ""
     }
     DATA = make_request(PARAMS)
     return DATA["parse"]["sections"]
@@ -63,41 +67,40 @@ def getLinksBySection(page: str, section: int, valid_links):
         "prop": "links",
         "section": section,
         "format": "json",
-        "redirects":""
+        "redirects": ""
     }
     DATA = make_request(PARAMS)
     valid_links.extend([link for link in DATA["parse"]["links"] if link["ns"] == 0])
 
 def getLinksInLead(page: str, valid_links):
     PARAMS = {
-        "action":"query",
-        "format":"json",
-        "prop":"info",
-        "titles":page,
-        "redirects":"",
-        "indexpageids":"",
-        "inprop":"url"
+        "action": "query",
+        "format": "json",
+        "prop": "info",
+        "titles": page,
+        "redirects": "",
+        "indexpageids": "",
+        "inprop": "url"
     }
     DATA = make_request(PARAMS)
     page_text = DATA["query"]["pages"][DATA["query"]["pageids"][0]]["fullurl"]
     full_page = session.get(url=page_text)
-    soup = BeautifulSoup(full_page.text,features="html.parser")
+    soup = BeautifulSoup(full_page.text, features="html.parser")
     div_zone = soup.select("div.mw-content-ltr.mw-parser-output p")
     infobox_zone = soup.select("table.infobox")
     wikitable_zone = soup.select("table.wikitable")
     for data in wikitable_zone:
         for link in data.select("a[href]"):
             if "/wiki/" in link['href'] and not "File:" in link['href'] and not "Help:" in link["href"]:
-                valid_links.append({'ns':0,'exists':'','*':link['href'].replace("/wiki/","").replace("_"," ")})
+                valid_links.append({'ns': 0, 'exists': '', '*': link['href'].replace("/wiki/", "").replace("_", " ")})
     for data in infobox_zone:
         for link in data.select("a[href]"):
             if "/wiki/" in link['href'] and not "File:" in link['href'] and not "Help:" in link["href"]:
-                valid_links.append({'ns':0,'exists':'','*':link['href'].replace("/wiki/","").replace("_"," ")})
+                valid_links.append({'ns': 0, 'exists': '', '*': link['href'].replace("/wiki/", "").replace("_", " ")})
     for paragraph in div_zone:
         for link in paragraph.select("a[href]"):
             if "/wiki/" in link['href'] and not "File:" in link['href'] and not "Help:" in link["href"]:
-                valid_links.append({'ns':0,'exists':'','*':link['href'].replace("/wiki/","").replace("_"," ")})
-    
+                valid_links.append({'ns': 0, 'exists': '', '*': link['href'].replace("/wiki/", "").replace("_", " ")})
 
 def getAllValidLinks(page: str):
     valid_links = []

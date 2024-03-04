@@ -17,16 +17,13 @@ spinner = spinning_cursor()
 
 def process_wiki_article(name):
     article = getPageDetails(name)
-    # check if wiki exists
     if not article["exists"]:
         print("That article doesn't exist!")
         exit()
-    # check if valid page
     for category in article["categories"]:
         if "Category:Disambiguation pages" == category["title"]:
             print("You cannot use a Disambiguation page!")
             exit()
-    # set to page title
     return article["title"]
 
 def get_user_input(prompt):
@@ -42,30 +39,23 @@ def validateWord(goal: str):
     return False
 
 def get_word_score(target: str, unit: str):
-    # Sanitize input strings
     unit = re.sub('\\(|\\)|\\\'|\\\"|\\-', "", unit)
     target = re.sub('\\(|\\)|\\\'|\\\"|\\-', "", target)
 
-    # Split strings into individual words
     unit_split = [word for word in unit.lower().split() if word in glove]
 
-    # Check if the target is in the glove dictionary
     if target.lower() in glove:
         target_vectors = [glove[target.lower()]]
     else:
-        # If the target is not in the glove dictionary, split it into individual words
         target_split = [word for word in target.lower().split() if word in glove]
         if len(target_split) > 1:
-            # If the target is multiple words, calculate the average of their vectors
             target_vectors = [torch.mean(torch.stack([glove[word] for word in target_split]), dim=0)]
         else:
             target_vectors = [glove[word] for word in target_split]
 
-    # Calculate word scores
     scores = [torch.nn.functional.cosine_similarity(target_vector.unsqueeze(0), glove[unit_name].unsqueeze(0))
               for target_vector in target_vectors for unit_name in unit_split]
 
-    # Calculate average score
     converted_score = sum(scores) / len(scores) if scores else 0
 
     return converted_score
