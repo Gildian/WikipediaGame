@@ -45,6 +45,7 @@ def getPageDetails(page: str):
     clean_data = {}
     clean_data["exists"] = True if DATA["query"]["pageids"][0] != '-1' else False
     if clean_data["exists"]:
+        print(DATA)
         clean_data["title"] = DATA["query"]["pages"][DATA["query"]["pageids"][0]]["title"]
         clean_data["categories"] = DATA["query"]["pages"][DATA["query"]["pageids"][0]]["categories"]
     return clean_data

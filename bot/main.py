@@ -46,5 +46,5 @@ if __name__ == "__main__":
     with open("path.txt", "w") as file:
         file.write(f"Start Article: {start_article}\nEnd Article: {end_article}\n\n")
         
-        perform_search(best_first_search, start_article, end_article, file)
+        # perform_search(best_first_search, start_article, end_article, file)
         perform_search(depth_first_search, start_article, end_article, file)

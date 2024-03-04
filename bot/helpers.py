@@ -60,7 +60,7 @@ def get_word_score(target: str, unit: str):
 
     return converted_score
 
-blacklist_words = ["wikipedia:", "template:", "category:", "template talk:", "(disambiguation)"] # these are pages that we want to avoid since they give bad data
+blacklist_words = ["wikipedia:", "template:", "category:", "template talk:", "(disambiguation)","user:"] # these are pages that we want to avoid since they give bad data
 def get_closest_links(page, goal_page, path_taken):
     links = getAllValidLinks(page)
     best_links = []
