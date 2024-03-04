@@ -3,6 +3,8 @@ import torchtext
 from wikiapi import getAllValidLinks, getPageDetails
 import re
 
+cosine_dict = {}
+
 def create_embeddings():
     return torchtext.vocab.GloVe(name="6B", dim=300)
 glove = create_embeddings()
@@ -39,31 +41,29 @@ def validateWord(goal: str):
     return False
 
 def get_word_score(target: str, unit: str):
-    unit = re.sub('\\(|\\)|\\\'|\\\"|\\-', "", unit)
-    target = re.sub('\\(|\\)|\\\'|\\\"|\\-', "", target)
-
-    unit_split = [word for word in unit.lower().split() if word in glove]
-
-    if target.lower() in glove:
-        target_vectors = [glove[target.lower()]]
-    else:
-        target_split = [word for word in target.lower().split() if word in glove]
-        if len(target_split) > 1:
-            target_vectors = [torch.mean(torch.stack([glove[word] for word in target_split]), dim=0)]
-        else:
-            target_vectors = [glove[word] for word in target_split]
-
-    scores = [torch.nn.functional.cosine_similarity(target_vector.unsqueeze(0), glove[unit_name].unsqueeze(0))
-              for target_vector in target_vectors for unit_name in unit_split]
-
-    converted_score = sum(scores) / len(scores) if scores else 0
-
-    return converted_score
+    if unit in cosine_dict:
+        return cosine_dict[unit]
+    unit_clean = re.sub('\\(|\\)|\\\"', " ", unit)
+    target_clean = re.sub('\\(|\\)|\\\"', " ", target)
+    # split words
+    unit_split = [word for word in unit_clean.lower().split() if word in glove]
+    target_split = [word for word in target_clean.lower().split() if word in glove]
+    if len(unit_split) == 0:
+        return -1
+    # combine words 
+    unit_mean = torch.mean(torch.stack([glove[word] for word in unit_split]),dim=0)
+    target_mean = torch.mean(torch.stack([glove[word] for word in target_split]),dim=0)
+    # get score of new tensors using cosine similarity
+    score = torch.nn.functional.cosine_similarity(unit_mean.unsqueeze(0),target_mean.unsqueeze(0))
+    cosine_dict[unit] = score
+    return score
 
 blacklist_words = ["wikipedia:", "template:", "category:", "template talk:", "(disambiguation)","user:"] # these are pages that we want to avoid since they give bad data
+THRESHOLD = 0.5 # set to -1 to effectivly allow all articles. valid range is [-1,1)
 def get_closest_links(page, goal_page, path_taken):
     links = getAllValidLinks(page)
     best_links = []
+    best_links_no_threshold = []
     if DEBUG_MODE:
         print(f"goal:{goal_page}\ncurrent:{page}\nlink count:{len(links)}")
     for link in links: # iterate over every link
@@ -75,13 +75,18 @@ def get_closest_links(page, goal_page, path_taken):
             continue
         else:
             link_score = get_word_score(goal_page, link_name)
-            best_links.append((link["*"], link_score))
+            if link_score > THRESHOLD:
+                best_links.append((link["*"], link_score))
+            best_links_no_threshold.append((link["*"], link_score)) # this is a fallback in case the threshold is so high it prevents any entires
             if DEBUG_MODE: print(link["*"], float(link_score))
     if len(best_links) == 0:
-        print("COULD NOT FIND NEXT PAGE")
-        print("Last page:",page)
-        exit()
-    return sorted(best_links, key=lambda tup: tup[1], reverse=True)
+        if len(best_links_no_threshold) == 0:
+            print("COULD NOT FIND NEXT PAGE")
+            print("Last page:",page)
+            exit()
+        if DEBUG_MODE: print(best_links)
+        return best_links_no_threshold
+    return best_links
 
 def get_closest_link(page, goal_page, path_taken):
     links = getAllValidLinks(page)

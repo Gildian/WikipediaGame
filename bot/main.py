@@ -33,7 +33,8 @@ def perform_search(search_function, start_article, end_article, file):
 
     file.write(f"{search_function.__name__}: ")
     file.write(str(search_result))
-    file.write(f"\n That took {round(end_time - start_time)} seconds and found a solution {len(search_result)} articles long")
+    if search_result != "NO SOLUTION":
+        file.write(f"\n That took {round(end_time - start_time)} seconds and found a solution {len(search_result)} articles long")
     file.write("\n\n")
 
 if __name__ == "__main__":
@@ -46,5 +47,5 @@ if __name__ == "__main__":
     with open("path.txt", "w") as file:
         file.write(f"Start Article: {start_article}\nEnd Article: {end_article}\n\n")
         
-        # perform_search(best_first_search, start_article, end_article, file)
+        perform_search(best_first_search, start_article, end_article, file)
         perform_search(depth_first_search, start_article, end_article, file)

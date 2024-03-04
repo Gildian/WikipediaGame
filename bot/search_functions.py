@@ -31,15 +31,15 @@ def best_first_search(start_page, goal_page, start_time):
             if current_page not in visited:  # if the current page has not been visited
                 if DEBUG_MODE: print("current list:",current_page_list)
                 visited.add(current_page)  # mark the current page as visited
+                if DEBUG_MODE: print("Visited:",visited)
                 closest_links = get_closest_links(current_page, goal_page, current_page_list)  # find the next best page
                 for links in closest_links:
                     new_score = score - links[1]
                     new_list = current_page_list.copy()
                     new_list.append(links[0])
                     new_score = new_score / len(new_list)
-                    if DEBUG_MODE: print(new_score,new_list)
-                    if new_score < 0:
-                        heapq.heappush(queue, (new_score, new_list))  # add the next page to the priority queue
+                    if DEBUG_MODE: print(new_score,new_list,len(queue))
+                    heapq.heappush(queue, (new_score, new_list))  # add the next page to the priority queue
     print("QUEUE EMPTY WITHOUT SOLUTION")
     exit()
 
