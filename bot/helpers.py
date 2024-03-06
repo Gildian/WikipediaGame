@@ -26,6 +26,7 @@ def process_wiki_article(name):
         if "Category:Disambiguation pages" == category["title"]:
             print("You cannot use a Disambiguation page!")
             exit()
+    if DEBUG_MODE: print(article)
     return article["title"]
 
 def get_user_input(prompt):
@@ -50,16 +51,24 @@ def get_word_score(target: str, unit: str):
     target_split = [word for word in target_clean.lower().split() if word in glove]
     if len(unit_split) == 0:
         return -1
+    best_score = -1
+    for unit_word in unit_split:
+        for target_word in target_split:
+            score = torch.nn.functional.cosine_similarity(glove[unit_word].unsqueeze(0),glove[target_word].unsqueeze(0))
+            if score > best_score:
+                best_score = score
     # combine words 
     unit_mean = torch.mean(torch.stack([glove[word] for word in unit_split]),dim=0)
     target_mean = torch.mean(torch.stack([glove[word] for word in target_split]),dim=0)
     # get score of new tensors using cosine similarity
     score = torch.nn.functional.cosine_similarity(unit_mean.unsqueeze(0),target_mean.unsqueeze(0))
-    cosine_dict[unit] = score
-    return score
+    if score > best_score:
+        best_score = score
+    cosine_dict[unit] = best_score
+    return best_score
 
 blacklist_words = ["wikipedia:", "template:", "category:", "template talk:", "(disambiguation)","user:","talk:"] # these are pages that we want to avoid since they give bad data
-THRESHOLD = 0.5 # set to -1 to effectivly allow all articles. valid range is [-1,1)
+THRESHOLD = 0.0 # set to -1 to effectivly allow all articles. valid range is [0,1)
 def get_closest_links(page, goal_page, path_taken):
     links = getAllValidLinks(page)
     best_links = []
@@ -77,7 +86,8 @@ def get_closest_links(page, goal_page, path_taken):
             link_score = get_word_score(goal_page, link_name)
             if link_score > THRESHOLD:
                 best_links.append((link["*"], link_score))
-            best_links_no_threshold.append((link["*"], link_score)) # this is a fallback in case the threshold is so high it prevents any entires
+            elif link_score > 0:
+                best_links_no_threshold.append((link["*"], link_score)) # this is a fallback in case the threshold is so high it prevents any entires
             if DEBUG_MODE: print(link["*"], float(link_score))
     if len(best_links) == 0:
         if len(best_links_no_threshold) == 0:
