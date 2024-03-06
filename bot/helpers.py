@@ -69,7 +69,7 @@ def get_word_score(target: str, unit: str):
     cosine_dict[unit] = best_score
     return best_score
 
-blacklist_words = ["wikipedia:", "template:", "category:", "template talk:", "(disambiguation)","user:","talk:"] # these are pages that we want to avoid since they give bad data
+blacklist_words = ["wikipedia:", "template:", "category:", "template talk:", "(disambiguation)","user:","talk:","(identifier)"] # these are pages that we want to avoid since they give bad data
 def get_closest_links(page, goal_page, path_taken):
     THRESHOLD = 0.0 # set to -1 to effectivly allow all articles. valid range is [0,1)
     links = getAllValidLinks(page)

@@ -8,7 +8,7 @@ import concurrent.futures
 DEBUG_MODE = False
 
 URL = "https://en.wikipedia.org/w/api.php"
-BLACKLISTED_SECTIONS = ["References", "External links"]
+BLACKLISTED_SECTIONS = ["References", "External links", "Further reading"]
 session = requests.Session()
 logger = logging.getLogger(__name__)
 
