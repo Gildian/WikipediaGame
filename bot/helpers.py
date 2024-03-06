@@ -55,6 +55,8 @@ def get_word_score(target: str, unit: str):
     for unit_word in unit_split:
         for target_word in target_split:
             score = torch.nn.functional.cosine_similarity(glove[unit_word].unsqueeze(0),glove[target_word].unsqueeze(0))
+            if score == 1:
+                return score
             if score > best_score:
                 best_score = score
     # combine words 
@@ -68,8 +70,8 @@ def get_word_score(target: str, unit: str):
     return best_score
 
 blacklist_words = ["wikipedia:", "template:", "category:", "template talk:", "(disambiguation)","user:","talk:"] # these are pages that we want to avoid since they give bad data
-THRESHOLD = 0.0 # set to -1 to effectivly allow all articles. valid range is [0,1)
 def get_closest_links(page, goal_page, path_taken):
+    THRESHOLD = 0.0 # set to -1 to effectivly allow all articles. valid range is [0,1)
     links = getAllValidLinks(page)
     best_links = []
     best_links_no_threshold = []

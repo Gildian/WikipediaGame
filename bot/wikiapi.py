@@ -41,6 +41,7 @@ def getPageDetails(page: str):
         "format": "json",
         "indexpageids": "",
         "prop": "categories",
+        "cllimit": "max",
         "redirects": ""
     }
     if DEBUG_MODE: print("params:",PARAMS)
