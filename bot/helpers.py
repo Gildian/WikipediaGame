@@ -59,8 +59,8 @@ def get_word_score(target: str, unit: str):
     scores = [torch.nn.functional.cosine_similarity(unit_vector, target_vector) 
             for unit_vector in unit_vectors for target_vector in target_vectors]
     # combine words 
-    unit_mean = torch.mean(torch.cat(unit_vectors), dim=0)
-    target_mean = torch.mean(torch.cat(target_vectors), dim=0)
+    unit_mean = torch.mean(torch.vstack(unit_vectors), dim=0)
+    target_mean = torch.mean(torch.vstack(target_vectors), dim=0)
     # get score of new tensors using cosine similarity
     combined_score = torch.nn.functional.cosine_similarity(unit_mean.unsqueeze(0), target_mean.unsqueeze(0))
     # find the best score
@@ -72,20 +72,20 @@ blacklist_words = ["wikipedia:", "template:", "category:", "template talk:", "(d
 def get_closest_links(page, goal_page, path_taken):
     THRESHOLD = 0.0 # set to -1 to effectivly allow all articles. valid range is [-1,1)
     links = getAllValidLinks(page)
-    best_links = []
+    best_links = set()
     if DEBUG_MODE:
         print(f"goal:{goal_page}\ncurrent:{page}\nlink count:{len(links)}")
     for link in links: # iterate over every link
         link_name = link["*"].lower()
         if link_name == goal_page: # if this link is the goal page simply exit since we have accomplished the goal
-            best_links.insert(0, (link["*"], 1))
+            best_links.add((link["*"], 1))
             break
         if any(blword in link_name for blword in blacklist_words) or link["*"] in path_taken: # checks that the link isnt blacklisted or has already been traveled
             continue
         else:
             link_score = get_word_score(goal_page, link_name)
             if link_score > THRESHOLD:
-                best_links.append((link["*"], link_score))
+                best_links.add((link["*"], link_score))
             if DEBUG_MODE: print(link["*"], float(link_score))
     if len(best_links) == 0:
         print("COULD NOT FIND NEXT PAGE")
