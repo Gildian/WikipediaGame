@@ -76,17 +76,17 @@ def get_closest_links(page, goal_page, path_taken):
     if DEBUG_MODE:
         print(f"goal:{goal_page}\ncurrent:{page}\nlink count:{len(links)}")
     for link in links: # iterate over every link
-        link_name = link["*"].lower()
+        link_name = link.lower()
         if link_name == goal_page: # if this link is the goal page simply exit since we have accomplished the goal
-            best_links.add((link["*"], 1))
+            best_links.add((link, 1))
             break
-        if any(blword in link_name for blword in blacklist_words) or link["*"] in path_taken: # checks that the link isnt blacklisted or has already been traveled
+        if any(blword in link_name for blword in blacklist_words) or link in path_taken: # checks that the link isnt blacklisted or has already been traveled
             continue
         else:
             link_score = get_word_score(goal_page, link_name)
             if link_score > THRESHOLD:
-                best_links.add((link["*"], link_score))
-            if DEBUG_MODE: print(link["*"], float(link_score))
+                best_links.add((link, link_score))
+            if DEBUG_MODE: print(link, float(link_score))
     if len(best_links) == 0:
         print("COULD NOT FIND NEXT PAGE")
         print("Last page:",page)
@@ -99,19 +99,19 @@ def get_closest_link(page, goal_page, path_taken):
     if DEBUG_MODE:
         print(f"goal:{goal_page}\ncurrent:{page}\nlink count:{len(links)}")
     for link in links:
-        link_name = link["*"].lower()
+        link_name = link.lower()
         if link_name == goal_page: # checks if this link is the solution
-            closest_match[0] = link["*"]
+            closest_match[0] = link
             closest_match[1] = 1
             break
         if any(blword in link_name for blword in blacklist_words): # checks if link is blacklisted
             continue
-        elif link["*"] in path_taken or link_name == page.lower(): # checks if link has already been traveled or is the same page as the current one
+        elif link in path_taken or link_name == page.lower(): # checks if link has already been traveled or is the same page as the current one
             continue
         else:
             link_score = get_word_score(goal_page, link_name)
             if closest_match[1] < link_score: # if the page is better than our current page update it
-                closest_page = getPageDetails(link["*"])
+                closest_page = getPageDetails(link)
                 if closest_page["exists"] and closest_page["title"] not in path_taken: # confirm the page exists
                     closest_match[0] = closest_page["title"]
                     closest_match[1] = link_score
