@@ -109,9 +109,9 @@ def getLinksInLead(page: str, valid_links):
 def getAllValidLinks(page: str):
     page = unquote(page)
     valid_links = []
-    getLinksInLead(page, valid_links)
     sections = getAllSections(page)
     with concurrent.futures.ThreadPoolExecutor(max_workers=25) as executor:
+        executor.submit(getLinksInLead, page, valid_links)
         for i, section in enumerate(sections):
             if section["line"] not in BLACKLISTED_SECTIONS:
                 executor.submit(getLinksBySection, page, i, valid_links)
