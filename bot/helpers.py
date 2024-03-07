@@ -70,10 +70,9 @@ def get_word_score(target: str, unit: str):
 
 blacklist_words = ["wikipedia:", "template:", "category:", "template talk:", "(disambiguation)","user:","talk:","(identifier)"] # these are pages that we want to avoid since they give bad data
 def get_closest_links(page, goal_page, path_taken):
-    THRESHOLD = 0.0 # set to -1 to effectivly allow all articles. valid range is [0,1)
+    THRESHOLD = 0.0 # set to -1 to effectivly allow all articles. valid range is [-1,1)
     links = getAllValidLinks(page)
     best_links = []
-    best_links_no_threshold = []
     if DEBUG_MODE:
         print(f"goal:{goal_page}\ncurrent:{page}\nlink count:{len(links)}")
     for link in links: # iterate over every link
@@ -87,16 +86,11 @@ def get_closest_links(page, goal_page, path_taken):
             link_score = get_word_score(goal_page, link_name)
             if link_score > THRESHOLD:
                 best_links.append((link["*"], link_score))
-            elif link_score > 0:
-                best_links_no_threshold.append((link["*"], link_score)) # this is a fallback in case the threshold is so high it prevents any entires
             if DEBUG_MODE: print(link["*"], float(link_score))
     if len(best_links) == 0:
-        if len(best_links_no_threshold) == 0:
-            print("COULD NOT FIND NEXT PAGE")
-            print("Last page:",page)
-            exit()
-        if DEBUG_MODE: print(best_links)
-        return best_links_no_threshold
+        print("COULD NOT FIND NEXT PAGE")
+        print("Last page:",page)
+        exit()
     return best_links
 
 def get_closest_link(page, goal_page, path_taken):
