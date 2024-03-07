@@ -3,6 +3,7 @@ from search_functions import best_first_search, depth_first_search
 from helpers import get_user_input, process_wiki_article, validateWord
 from wikiapi import getTwoRandomPages
 import time
+import json
 
 def get_articles():
     if len(sys.argv) == 2 and sys.argv[1] == "random":
@@ -30,12 +31,16 @@ def perform_search(search_function, start_article, end_article, file):
     end_time = time.time()
     if search_result != "NO SOLUTION":
         print("That took", round(end_time - start_time), "seconds and found a solution", len(search_result), "articles long")
-
-    file.write(f"{search_function.__name__}: ")
-    file.write(str(search_result))
-    if search_result != "NO SOLUTION":
-        file.write(f"\n That took {round(end_time - start_time)} seconds and found a solution {len(search_result)} articles long")
-    file.write("\n\n")
+    # file output for eventual web interface in JSON format
+    output = {
+        "algo":search_function.__name__,
+        "path":str(search_result),
+        "time":round(end_time - start_time),
+        "length":len(search_result) if search_result != "NO SOLUTION" else -1
+    }
+    file.write("\n")
+    file.write(json.dumps(output))
+    
 
 if __name__ == "__main__":
     start_article, end_article = get_articles()
@@ -45,7 +50,7 @@ if __name__ == "__main__":
         exit()
 
     with open("path.txt", "w") as file:
-        file.write(f"Start Article: {start_article}\nEnd Article: {end_article}\n\n")
-        
+        file.write(json.dumps({"start":start_article,"end":end_article}))
+
         perform_search(best_first_search, start_article, end_article, file)
         perform_search(depth_first_search, start_article, end_article, file)
