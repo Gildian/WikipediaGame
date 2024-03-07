@@ -49,8 +49,10 @@ if __name__ == "__main__":
         print("End Article not present in GloVe vectors! Solution impossible to find!")
         exit()
 
-    with open("path.txt", "w") as file:
-        file.write(json.dumps({"start":start_article,"end":end_article}))
+    with open("path.json", "w") as file:
+        json.dump({"start": start_article, "end": end_article}, file, indent=4)
 
-        perform_search(best_first_search, start_article, end_article, file)
-        perform_search(depth_first_search, start_article, end_article, file)
+        output_best_first_search = perform_search(best_first_search, start_article, end_article,file)
+        output_depth_first_search = perform_search(depth_first_search, start_article, end_article,file)
+
+        json.dump({"best_first_search": output_best_first_search, "depth_first_search": output_depth_first_search}, file, indent=4)
