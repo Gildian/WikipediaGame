@@ -41,31 +41,30 @@ def validateWord(goal: str):
             return True
     return False
 
+# Compile the regular expression pattern
+pattern = re.compile('\\(|\\)|\\\"')
 def get_word_score(target: str, unit: str):
     if unit in cosine_dict:
         return cosine_dict[unit]
-    unit_clean = re.sub('\\(|\\)|\\\"', " ", unit)
-    target_clean = re.sub('\\(|\\)|\\\"', " ", target)
-    # split words
-    unit_split = [word for word in unit_clean.lower().split() if word in glove]
-    target_split = [word for word in target_clean.lower().split() if word in glove]
-    if len(unit_split) == 0:
+    unit_clean = pattern.sub(" ", unit)
+    target_clean = pattern.sub(" ", target)
+    unit_split = set(word for word in unit_clean.lower().split() if word in glove)
+    target_split = set(word for word in target_clean.lower().split() if word in glove)
+    if not unit_split:
         return -1
-    best_score = -1
-    for unit_word in unit_split:
-        for target_word in target_split:
-            score = torch.nn.functional.cosine_similarity(glove[unit_word].unsqueeze(0),glove[target_word].unsqueeze(0))
-            if score == 1:
-                return score
-            if score > best_score:
-                best_score = score
+    # Pre-calculate unsqueeze(0) for each word
+    unit_vectors = [glove[word].unsqueeze(0) for word in unit_split]
+    target_vectors = [glove[word].unsqueeze(0) for word in target_split]
+    # calculate scores
+    scores = [torch.nn.functional.cosine_similarity(unit_vector, target_vector) 
+            for unit_vector in unit_vectors for target_vector in target_vectors]
     # combine words 
-    unit_mean = torch.mean(torch.stack([glove[word] for word in unit_split]),dim=0)
-    target_mean = torch.mean(torch.stack([glove[word] for word in target_split]),dim=0)
+    unit_mean = torch.mean(torch.cat(unit_vectors), dim=0)
+    target_mean = torch.mean(torch.cat(target_vectors), dim=0)
     # get score of new tensors using cosine similarity
-    score = torch.nn.functional.cosine_similarity(unit_mean.unsqueeze(0),target_mean.unsqueeze(0))
-    if score > best_score:
-        best_score = score
+    combined_score = torch.nn.functional.cosine_similarity(unit_mean.unsqueeze(0), target_mean.unsqueeze(0))
+    # find the best score
+    best_score = max(max(scores, default=-1), combined_score)
     cosine_dict[unit] = best_score
     return best_score
 
