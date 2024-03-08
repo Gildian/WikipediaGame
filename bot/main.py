@@ -18,7 +18,7 @@ def get_articles():
         end_article = get_user_input("Enter the ending article:")
     return start_article, end_article
 
-def perform_search(search_function, start_article, end_article, file):
+def perform_search(search_function, start_article, end_article):
     print(f"Finding a path from {start_article} to {end_article}")
     start_time = time.time()
     sys.stdout.write(f"Processing {search_function.__name__}: ")
@@ -38,8 +38,8 @@ def perform_search(search_function, start_article, end_article, file):
         "time":round(end_time - start_time),
         "length":len(search_result) if search_result != "NO SOLUTION" else -1
     }
-    file.write("\n")
-    file.write(json.dumps(output))
+
+    return output
     
 
 if __name__ == "__main__":
@@ -49,10 +49,14 @@ if __name__ == "__main__":
         print("End Article not present in GloVe vectors! Solution impossible to find!")
         exit()
 
+    output_best_first_search = perform_search(best_first_search, start_article, end_article)
+    output_depth_first_search = perform_search(depth_first_search, start_article, end_article)
+
+    output = {
+        "start": start_article,
+        "end": end_article,
+        "results": [output_best_first_search, output_depth_first_search]
+    }
+
     with open("path.json", "w") as file:
-        json.dump({"start": start_article, "end": end_article}, file, indent=4)
-
-        output_best_first_search = perform_search(best_first_search, start_article, end_article,file)
-        output_depth_first_search = perform_search(depth_first_search, start_article, end_article,file)
-
-        json.dump({"best_first_search": output_best_first_search, "depth_first_search": output_depth_first_search}, file, indent=4)
+        json.dump(output, file, indent=4)
