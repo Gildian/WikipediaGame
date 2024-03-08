@@ -33,36 +33,58 @@ def get_user_input(prompt):
     user_input = input(prompt)
     return process_wiki_article(user_input)
 
-def validateWord(goal: str):
-    goal,_ = re.subn('\\(|\\)|\\\'|\\\"|\\-',"",goal)
-    goal_split = goal.split()
-    for name in goal_split:
-        if name.lower() in glove:
-            return True
-    return False
-
+title_pattern = re.compile('\\(|\\)|\\\"')
 # Compile the regular expression pattern
-pattern = re.compile('\\(|\\)|\\\"')
-def get_word_score(target: str, unit: str):
+category_pattern = re.compile('Category:')
+def get_categories(page):
+    page_details = getPageDetails(page)
+    if page_details["exists"]:
+        categories = page_details["categories"]
+        category_titles = set(category_pattern.sub("",title["title"]).lower() for title in categories)
+        category_split = set()
+        for title in category_titles:
+            for title_split in title.split():
+                if title_split in glove:
+                    category_split.add(title_split)
+        return category_split
+    else:
+        return set()
+    
+goal_vector_data = {}
+def pre_compute_goal(goal: str):
+    goal_clean = title_pattern.sub(" ",goal)
+    goal_split = set(word for word in goal_clean.lower().split() if word in glove)
+    if not goal_split:
+        # unit has no glove vectors, use categories
+        goal_split = get_categories(goal)
+        if len(goal_split) == 0:
+            print("Goal page invalid! Solution impossible to find!")
+            exit()
+    goal_vectors = [glove[word].unsqueeze(0) for word in goal_split]
+    goal_mean = torch.mean(torch.vstack(goal_vectors), dim=0)
+    goal_vector_data["vectors"] = goal_vectors
+    goal_vector_data["mean"] = goal_mean
+
+def get_word_score(unit: str):
     if unit in cosine_dict:
         return cosine_dict[unit]
-    unit_clean = pattern.sub(" ", unit)
-    target_clean = pattern.sub(" ", target)
+    unit_clean = title_pattern.sub(" ", unit)
     unit_split = set(word for word in unit_clean.lower().split() if word in glove)
-    target_split = set(word for word in target_clean.lower().split() if word in glove)
     if not unit_split:
-        return -1
+        # unit has no glove vectors, use categories
+        unit_split = get_categories(unit)
+        if len(unit_split) == 0:
+            return -1
+
     # Pre-calculate unsqueeze(0) for each word
     unit_vectors = [glove[word].unsqueeze(0) for word in unit_split]
-    target_vectors = [glove[word].unsqueeze(0) for word in target_split]
     # calculate scores
     scores = [torch.nn.functional.cosine_similarity(unit_vector, target_vector) 
-            for unit_vector in unit_vectors for target_vector in target_vectors]
+            for unit_vector in unit_vectors for target_vector in goal_vector_data["vectors"]]
     # combine words 
     unit_mean = torch.mean(torch.vstack(unit_vectors), dim=0)
-    target_mean = torch.mean(torch.vstack(target_vectors), dim=0)
     # get score of new tensors using cosine similarity
-    combined_score = torch.nn.functional.cosine_similarity(unit_mean.unsqueeze(0), target_mean.unsqueeze(0))
+    combined_score = torch.nn.functional.cosine_similarity(unit_mean.unsqueeze(0), goal_vector_data["mean"].unsqueeze(0))
     # find the best score
     best_score = max(max(scores, default=-1), combined_score)
     cosine_dict[unit] = best_score
@@ -83,7 +105,7 @@ def get_closest_links(page, goal_page, path_taken):
         if any(blword in link_name for blword in blacklist_words) or link in path_taken: # checks that the link isnt blacklisted or has already been traveled
             continue
         else:
-            link_score = get_word_score(goal_page, link_name)
+            link_score = get_word_score(link_name)
             if link_score > THRESHOLD:
                 best_links.add((link, link_score))
             if DEBUG_MODE: print(link, float(link_score))
@@ -109,7 +131,7 @@ def get_closest_link(page, goal_page, path_taken):
         elif link in path_taken or link_name == page.lower(): # checks if link has already been traveled or is the same page as the current one
             continue
         else:
-            link_score = get_word_score(goal_page, link_name)
+            link_score = get_word_score(link_name)
             if closest_match[1] < link_score: # if the page is better than our current page update it
                 closest_page = getPageDetails(link)
                 if closest_page["exists"] and closest_page["title"] not in path_taken: # confirm the page exists

@@ -42,7 +42,8 @@ def getPageDetails(page: str):
         "indexpageids": "",
         "prop": "categories",
         "cllimit": "max",
-        "redirects": ""
+        "redirects": "",
+        "clshow":"!hidden"
     }
     if DEBUG_MODE: print("params:",PARAMS)
     DATA = make_request(PARAMS)

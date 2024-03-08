@@ -1,6 +1,6 @@
 import sys 
 from search_functions import best_first_search, depth_first_search
-from helpers import get_user_input, process_wiki_article, validateWord
+from helpers import get_user_input, process_wiki_article, pre_compute_goal
 from wikiapi import getTwoRandomPages
 import time
 import json
@@ -44,10 +44,7 @@ def perform_search(search_function, start_article, end_article, file):
 
 if __name__ == "__main__":
     start_article, end_article = get_articles()
-
-    if not validateWord(end_article):
-        print("End Article not present in GloVe vectors! Solution impossible to find!")
-        exit()
+    pre_compute_goal(end_article)
 
     with open("path.json", "w") as file:
         json.dump({"start": start_article, "end": end_article}, file, indent=4)
