@@ -34,32 +34,10 @@ def get_user_input(prompt):
     return process_wiki_article(user_input)
 
 title_pattern = re.compile('\\(|\\)|\\\"')
-# Compile the regular expression pattern
-category_pattern = re.compile('Category:')
-def get_categories(page):
-    page_details = getPageDetails(page)
-    if page_details["exists"]:
-        categories = page_details["categories"]
-        category_titles = set(category_pattern.sub("",title["title"]).lower() for title in categories)
-        category_split = set()
-        for title in category_titles:
-            for title_split in title.split():
-                if title_split in glove:
-                    category_split.add(title_split)
-        return category_split
-    else:
-        return set()
-    
 goal_vector_data = {}
 def pre_compute_goal(goal: str):
     goal_clean = title_pattern.sub(" ",goal)
     goal_split = set(word for word in goal_clean.lower().split() if word in glove)
-    if not goal_split or (len(goal_split) <= 3 and len(goal_split) != 1):
-        # unit has no glove vectors, use categories
-        goal_split.update(get_categories(goal))
-        if len(goal_split) == 0:
-            print("Goal page invalid! Solution impossible to find!")
-            exit()
     goal_vectors = [glove[word].unsqueeze(0) for word in goal_split]
     goal_mean = torch.mean(torch.vstack(goal_vectors), dim=0)
     goal_vector_data["vectors"] = goal_vectors
@@ -70,12 +48,8 @@ def get_word_score(unit: str):
         return cosine_dict[unit]
     unit_clean = title_pattern.sub(" ", unit)
     unit_split = set(word for word in unit_clean.lower().split() if word in glove)
-    if not unit_split or (len(unit_split) <= 3 and len(unit_split) != 1):
-        # unit has no glove vectors, use categories
-        unit_split.update(get_categories(unit))
-        if len(unit_split) == 0:
-            return -1
-
+    if not unit_split:
+        return -1
     # Pre-calculate unsqueeze(0) for each word
     unit_vectors = [glove[word].unsqueeze(0) for word in unit_split]
     # calculate scores
