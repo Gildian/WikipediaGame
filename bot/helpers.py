@@ -53,8 +53,15 @@ def get_word_score(unit: str):
     # Pre-calculate unsqueeze(0) for each word
     unit_vectors = [glove[word].unsqueeze(0) for word in unit_split]
     # calculate scores
-    scores = [torch.nn.functional.cosine_similarity(unit_vector, target_vector) 
-            for unit_vector in unit_vectors for target_vector in goal_vector_data["vectors"]]
+    scores = set()
+    for unit_vector in unit_vectors:
+        for target_vector in goal_vector_data["vectors"]: 
+            score = torch.nn.functional.cosine_similarity(unit_vector, target_vector)
+            if(score == 1):
+                scores.add(.75)
+            else:
+                scores.add(score)
+
     # combine words 
     unit_mean = torch.mean(torch.vstack(unit_vectors), dim=0)
     # get score of new tensors using cosine similarity
