@@ -3,6 +3,8 @@ import torchtext
 from wikiapi import getAllValidLinks, getPageDetails
 import re
 
+cosine_dict = {}
+
 def create_embeddings():
     return torchtext.vocab.GloVe(name="6B", dim=300)
 glove = create_embeddings()
@@ -24,6 +26,7 @@ def process_wiki_article(name):
         if "Category:Disambiguation pages" == category["title"]:
             print("You cannot use a Disambiguation page!")
             exit()
+    if DEBUG_MODE: print(article)
     return article["title"]
 
 def get_user_input(prompt):
@@ -38,50 +41,57 @@ def validateWord(goal: str):
             return True
     return False
 
+# Compile the regular expression pattern
+pattern = re.compile('\\(|\\)|\\\"')
 def get_word_score(target: str, unit: str):
-    unit = re.sub('\\(|\\)|\\\'|\\\"|\\-', "", unit)
-    target = re.sub('\\(|\\)|\\\'|\\\"|\\-', "", target)
+    if unit in cosine_dict:
+        return cosine_dict[unit]
+    unit_clean = pattern.sub(" ", unit)
+    target_clean = pattern.sub(" ", target)
+    unit_split = set(word for word in unit_clean.lower().split() if word in glove)
+    target_split = set(word for word in target_clean.lower().split() if word in glove)
+    if not unit_split:
+        return -1
+    # Pre-calculate unsqueeze(0) for each word
+    unit_vectors = [glove[word].unsqueeze(0) for word in unit_split]
+    target_vectors = [glove[word].unsqueeze(0) for word in target_split]
+    # calculate scores
+    scores = [torch.nn.functional.cosine_similarity(unit_vector, target_vector) 
+            for unit_vector in unit_vectors for target_vector in target_vectors]
+    # combine words 
+    unit_mean = torch.mean(torch.vstack(unit_vectors), dim=0)
+    target_mean = torch.mean(torch.vstack(target_vectors), dim=0)
+    # get score of new tensors using cosine similarity
+    combined_score = torch.nn.functional.cosine_similarity(unit_mean.unsqueeze(0), target_mean.unsqueeze(0))
+    # find the best score
+    best_score = max(max(scores, default=-1), combined_score)
+    cosine_dict[unit] = best_score
+    return best_score
 
-    unit_split = [word for word in unit.lower().split() if word in glove]
-
-    if target.lower() in glove:
-        target_vectors = [glove[target.lower()]]
-    else:
-        target_split = [word for word in target.lower().split() if word in glove]
-        if len(target_split) > 1:
-            target_vectors = [torch.mean(torch.stack([glove[word] for word in target_split]), dim=0)]
-        else:
-            target_vectors = [glove[word] for word in target_split]
-
-    scores = [torch.nn.functional.cosine_similarity(target_vector.unsqueeze(0), glove[unit_name].unsqueeze(0))
-              for target_vector in target_vectors for unit_name in unit_split]
-
-    converted_score = sum(scores) / len(scores) if scores else 0
-
-    return converted_score
-
-blacklist_words = ["wikipedia:", "template:", "category:", "template talk:", "(disambiguation)"] # these are pages that we want to avoid since they give bad data
+blacklist_words = ["wikipedia:", "template:", "category:", "template talk:", "(disambiguation)","user:","talk:","(identifier)"] # these are pages that we want to avoid since they give bad data
 def get_closest_links(page, goal_page, path_taken):
+    THRESHOLD = 0.0 # set to -1 to effectivly allow all articles. valid range is [-1,1)
     links = getAllValidLinks(page)
-    best_links = []
+    best_links = set()
     if DEBUG_MODE:
         print(f"goal:{goal_page}\ncurrent:{page}\nlink count:{len(links)}")
     for link in links: # iterate over every link
         link_name = link["*"].lower()
         if link_name == goal_page: # if this link is the goal page simply exit since we have accomplished the goal
-            best_links.insert(0, (link["*"], 1))
+            best_links.add((link["*"], 1))
             break
         if any(blword in link_name for blword in blacklist_words) or link["*"] in path_taken: # checks that the link isnt blacklisted or has already been traveled
             continue
         else:
             link_score = get_word_score(goal_page, link_name)
-            best_links.append((link["*"], link_score))
+            if link_score > THRESHOLD:
+                best_links.add((link["*"], link_score))
             if DEBUG_MODE: print(link["*"], float(link_score))
     if len(best_links) == 0:
         print("COULD NOT FIND NEXT PAGE")
         print("Last page:",page)
         exit()
-    return sorted(best_links, key=lambda tup: tup[1], reverse=True)
+    return best_links
 
 def get_closest_link(page, goal_page, path_taken):
     links = getAllValidLinks(page)
