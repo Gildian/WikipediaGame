@@ -1,8 +1,9 @@
 import sys 
 from search_functions import best_first_search, depth_first_search
-from helpers import get_user_input, process_wiki_article, validateWord
+from helpers import get_user_input, process_wiki_article, pre_compute_goal
 from wikiapi import getTwoRandomPages
 import time
+import json
 
 def get_articles():
     if len(sys.argv) == 2 and sys.argv[1] == "random":
@@ -17,7 +18,7 @@ def get_articles():
         end_article = get_user_input("Enter the ending article:")
     return start_article, end_article
 
-def perform_search(search_function, start_article, end_article, file):
+def perform_search(search_function, start_article, end_article):
     print(f"Finding a path from {start_article} to {end_article}")
     start_time = time.time()
     sys.stdout.write(f"Processing {search_function.__name__}: ")
@@ -30,22 +31,29 @@ def perform_search(search_function, start_article, end_article, file):
     end_time = time.time()
     if search_result != "NO SOLUTION":
         print("That took", round(end_time - start_time), "seconds and found a solution", len(search_result), "articles long")
+    # file output for eventual web interface in JSON format
+    output = {
+        "algo":search_function.__name__,
+        "path":str(search_result),
+        "time":round(end_time - start_time),
+        "length":len(search_result) if search_result != "NO SOLUTION" else -1
+    }
 
-    file.write(f"{search_function.__name__}: ")
-    file.write(str(search_result))
-    if search_result != "NO SOLUTION":
-        file.write(f"\n That took {round(end_time - start_time)} seconds and found a solution {len(search_result)} articles long")
-    file.write("\n\n")
+    return output
+    
 
 if __name__ == "__main__":
     start_article, end_article = get_articles()
+    pre_compute_goal(end_article)
 
-    if not validateWord(end_article):
-        print("End Article not present in GloVe vectors! Solution impossible to find!")
-        exit()
+    output_best_first_search = perform_search(best_first_search, start_article, end_article)
+    output_depth_first_search = perform_search(depth_first_search, start_article, end_article)
 
-    with open("path.txt", "w") as file:
-        file.write(f"Start Article: {start_article}\nEnd Article: {end_article}\n\n")
-        
-        perform_search(best_first_search, start_article, end_article, file)
-        perform_search(depth_first_search, start_article, end_article, file)
+    output = {
+        "start": start_article,
+        "end": end_article,
+        "results": [output_best_first_search, output_depth_first_search]
+    }
+
+    with open("path.json", "w") as file:
+        json.dump(output, file, indent=4)

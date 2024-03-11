@@ -1,6 +1,6 @@
 .vector_cache
 glove.6B.300d.txt
-path.txt
+path.json
 __pycache__
 server.py
 node_modules

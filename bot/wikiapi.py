@@ -42,7 +42,8 @@ def getPageDetails(page: str):
         "indexpageids": "",
         "prop": "categories",
         "cllimit": "max",
-        "redirects": ""
+        "redirects": "",
+        "clshow":"!hidden"
     }
     if DEBUG_MODE: print("params:",PARAMS)
     DATA = make_request(PARAMS)
@@ -74,7 +75,9 @@ def getLinksBySection(page: str, section: int, valid_links):
         "redirects": ""
     }
     DATA = make_request(PARAMS)
-    valid_links.extend([link for link in DATA["parse"]["links"] if link["ns"] == 0])
+    for link in DATA["parse"]["links"]:
+        if link["ns"] == 0:
+            valid_links.add(link["*"])
 
 def getLinksInLead(page: str, valid_links):
     PARAMS = {
@@ -93,24 +96,20 @@ def getLinksInLead(page: str, valid_links):
     div_zone = soup.select("div.mw-content-ltr.mw-parser-output p")
     infobox_zone = soup.select("table.infobox")
     wikitable_zone = soup.select("table.wikitable")
-    for data in wikitable_zone:
-        for link in data.select("a[href]"):
-            if "/wiki/" in link['href'] and not "File:" in link['href'] and not "Help:" in link["href"]:
-                valid_links.append({'ns': 0, 'exists': '', '*': link['href'].replace("/wiki/", "").replace("_", " ")})
-    for data in infobox_zone:
-        for link in data.select("a[href]"):
-            if "/wiki/" in link['href'] and not "File:" in link['href'] and not "Help:" in link["href"]:
-                valid_links.append({'ns': 0, 'exists': '', '*': link['href'].replace("/wiki/", "").replace("_", " ")})
-    for paragraph in div_zone:
-        for link in paragraph.select("a[href]"):
-            if "/wiki/" in link['href'] and not "File:" in link['href'] and not "Help:" in link["href"]:
-                valid_links.append({'ns': 0, 'exists': '', '*': link['href'].replace("/wiki/", "").replace("_", " ")})
+    def getLinks(zone):
+        for data in zone:
+            for link in data.select("a[href]"):
+                if "/wiki/" in link['href'] and not "File:" in link['href'] and not "Help:" in link["href"]:
+                    valid_links.add(link['href'].replace("/wiki/", "").replace("_", " "))
+    getLinks(wikitable_zone)
+    getLinks(infobox_zone)
+    getLinks(div_zone)
 
 def getAllValidLinks(page: str):
     page = unquote(page)
-    valid_links = []
+    valid_links = set()
     sections = getAllSections(page)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=25) as executor:
+    with concurrent.futures.ThreadPoolExecutor() as executor:
         executor.submit(getLinksInLead, page, valid_links)
         for i, section in enumerate(sections):
             if section["line"] not in BLACKLISTED_SECTIONS:
