@@ -1,5 +1,6 @@
 import logging
 import requests
+from urllib.parse import unquote
 from bs4 import BeautifulSoup
 
 import concurrent.futures
@@ -7,7 +8,7 @@ import concurrent.futures
 DEBUG_MODE = False
 
 URL = "https://en.wikipedia.org/w/api.php"
-BLACKLISTED_SECTIONS = ["References", "External links"]
+BLACKLISTED_SECTIONS = ["References", "External links", "Further reading"]
 session = requests.Session()
 logger = logging.getLogger(__name__)
 
@@ -33,14 +34,17 @@ def getTwoRandomPages():
     return DATA["query"]["random"]
 
 def getPageDetails(page: str):
+    page = unquote(page)
     PARAMS = {
         "action": "query",
         "titles": page,
         "format": "json",
         "indexpageids": "",
         "prop": "categories",
+        "cllimit": "max",
         "redirects": ""
     }
+    if DEBUG_MODE: print("params:",PARAMS)
     DATA = make_request(PARAMS)
     clean_data = {}
     clean_data["exists"] = True if DATA["query"]["pageids"][0] != '-1' else False
@@ -103,11 +107,13 @@ def getLinksInLead(page: str, valid_links):
                 valid_links.append({'ns': 0, 'exists': '', '*': link['href'].replace("/wiki/", "").replace("_", " ")})
 
 def getAllValidLinks(page: str):
+    page = unquote(page)
     valid_links = []
-    getLinksInLead(page, valid_links)
     sections = getAllSections(page)
     with concurrent.futures.ThreadPoolExecutor(max_workers=25) as executor:
+        executor.submit(getLinksInLead, page, valid_links)
         for i, section in enumerate(sections):
             if section["line"] not in BLACKLISTED_SECTIONS:
                 executor.submit(getLinksBySection, page, i, valid_links)
+    if DEBUG_MODE: print("Valid links:",valid_links)
     return valid_links
