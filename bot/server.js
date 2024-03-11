@@ -1,32 +1,49 @@
 const express = require("express");
-const { spawn, exec } = require("child_process");
+const { spawn } = require("child_process");
+const fs = require('fs');
 require("colors");
 
 const app = express();
 
 app.post("/", async (req, res) => {
+  const isRandom = req.body?.isRandom || true;
   const startArticle = req.body?.startArticle;
   const endArticle = req.body?.endArticle;
-  const botFunc = 'test.py';
-  const botFin = false;
+  const algo = req.body?.algo || 'best_first_search';
+  const botFile = 'main.py';
+  let botData;
+  let args = [`${botFile}`, 'client'];
 
-  // wrap this in a promise
-  // add random button to client
-  const wikiBot = spawn('python', [`${botFunc}`]);
+  if (isRandom === 'random') {
+    args.push('random');
+  }
+  else if (!isRandom) {
+    args.push(`${startArticle}`, `${endArticle}`)
+  }
 
-  wikiBot.stdout.on('data', (data) => {
-    console.log(`Server: stdout: ${data}`);
-  });
+  args.push(`${algo}`)
 
-  wikiBot.stderr.on('data', (data) => {
-    console.log(`Server: stderr: ${data}`);
-  });
+  const wikiBot = spawn('python', args);
 
   wikiBot.on('close', (code) => {
+    fs.readFile('./path.json', 'utf8', (err, jsonString) => {
+      if (err) {
+        console.log("Error reading json file:", err);
+        return;
+      }
+
+      try {
+        botData = JSON.parse(jsonString);
+        console.log(botData);
+      } catch (err) {
+        console.log('Error parsing JSON string:', err);
+      }
+    });
+
     console.log(`Server: Wiki Bot closed with code ${code}`);
   });
 
-  //res.status(200).json("boing");
+  res.status(200).json("boing");
 });
 
 app.use((req, res, next) => {
