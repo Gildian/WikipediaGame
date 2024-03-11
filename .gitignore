@@ -4,3 +4,5 @@ path.txt
 __pycache__
 server.py
 node_modules
+test.py
+search_function.py

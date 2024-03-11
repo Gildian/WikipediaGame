@@ -47,7 +47,8 @@ function Home() {
             <input type="text" placeholder="Start Title" name="startTitle" value={startTitle} onFocus={() => setStartTitle('')} onChange={(e) => setStartTitle(e.target.value)}/>
             <p>to</p>
             <input type="text" placeholder="End Title" name="endTitle" value={endTitle} onFocus={() => setEndTitle('')} onChange={(e) => setEndTitle(e.target.value)}/>
-            <button>Go</button>
+            <button className="goButton" type="submit">Go</button>
+            <button type="submit">Random</button>
           </form>
           <section className="botInfo">
             <div className="infoHeader">

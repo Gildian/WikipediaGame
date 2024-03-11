@@ -44,7 +44,7 @@
         margin-top: 2%;
 
         input {
-          width: 38%;
+          width: 30%;
           height: 60%;
 
           padding-left: .6%;
@@ -77,12 +77,16 @@
           border-radius: $borderRadius;
 
           height: 65%;
-          width: 10%;
+          width: 16%;
 
           font-family: LittleCaeser;
           font-size: 2.8rem;
           color: $primaryText;
           background-color: $secondaryColor;
+        }
+
+        .goButton {
+          width: 12%;
         }
 
         button:hover {
