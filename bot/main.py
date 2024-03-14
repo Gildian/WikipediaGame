@@ -5,23 +5,18 @@ from wikiapi import getTwoRandomPages
 import time
 import json
 
-useAlgo = "both_algo"
-
 def get_articles():
-    # handle client
-    global useAlgo
+    # ~~~~~~~~~~~~ handle client ~~~~~~~~~~~~
     if len(sys.argv) >= 2 and sys.argv[1] == "client":
         if len(sys.argv) == 4 and sys.argv[2] == "random":
-            useAlgo = sys.argv[3]
             pages = getTwoRandomPages()
-            start_article = pages[0]["title"]
-            end_article = pages[1]["title"]
+            start_article = 'minecraft'#pages[0]["title"]
+            end_article = 'pizza'#pages[1]["title"]
         elif len(sys.argv) == 5:
             start_article = process_wiki_article(sys.argv[2])
             end_article = process_wiki_article(sys.argv[3])
-            useAlgo = sys.argv[4]
         return start_article, end_article
-    # end
+    # ~~~~~~~~~~~~ end ~~~~~~~~~~~~
 
     if len(sys.argv) == 2 and sys.argv[1] == "random":
         pages = getTwoRandomPages()
@@ -60,11 +55,20 @@ def perform_search(search_function, start_article, end_article):
     
 
 if __name__ == "__main__":
-    print('test')
     start_article, end_article = get_articles()
     pre_compute_goal(end_article)
 
-    # handle client, only 1 algo selected
+    # ~~~~~~~~~~~~ handle client ~~~~~~~~~~~~
+    # client use-case vars
+    useAlgo = "both_algo"
+
+    if len(sys.argv) >= 2 and sys.argv[1] == "client":
+        if len(sys.argv) == 4 and sys.argv[2] == "random":
+            useAlgo = sys.argv[3]
+    elif len(sys.argv) == 5:
+        useAlgo = sys.argv[4]
+
+    # only 1 algo selected by client, otherwise function main func runs as normal with both search outputs
     if useAlgo != "both_algo":
         if useAlgo == "best_first_search":
             output_search = perform_search(best_first_search, start_article, end_article)
@@ -80,7 +84,7 @@ if __name__ == "__main__":
             json.dump(output, file, indent=4)
 
         exit()
-    # end
+    # ~~~~~~~~~~~~ end ~~~~~~~~~~~~
 
     output_best_first_search = perform_search(best_first_search, start_article, end_article)
     output_depth_first_search = perform_search(depth_first_search, start_article, end_article)
