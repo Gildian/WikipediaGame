@@ -6,6 +6,18 @@ import time
 import json
 
 def get_articles():
+    # ~~~~~~~~~~~~ handle client ~~~~~~~~~~~~
+    if len(sys.argv) >= 2 and sys.argv[1] == "client":
+        if len(sys.argv) == 4 and sys.argv[2] == "random":
+            pages = getTwoRandomPages()
+            start_article = 'minecraft'#pages[0]["title"]
+            end_article = 'pizza'#pages[1]["title"]
+        elif len(sys.argv) == 5:
+            start_article = process_wiki_article(sys.argv[2])
+            end_article = process_wiki_article(sys.argv[3])
+        return start_article, end_article
+    # ~~~~~~~~~~~~ end ~~~~~~~~~~~~
+
     if len(sys.argv) == 2 and sys.argv[1] == "random":
         pages = getTwoRandomPages()
         start_article = pages[0]["title"]
@@ -45,6 +57,34 @@ def perform_search(search_function, start_article, end_article):
 if __name__ == "__main__":
     start_article, end_article = get_articles()
     pre_compute_goal(end_article)
+
+    # ~~~~~~~~~~~~ handle client ~~~~~~~~~~~~
+    # client use-case vars
+    useAlgo = "both_algo"
+
+    if len(sys.argv) >= 2 and sys.argv[1] == "client":
+        if len(sys.argv) == 4 and sys.argv[2] == "random":
+            useAlgo = sys.argv[3]
+    elif len(sys.argv) == 5:
+        useAlgo = sys.argv[4]
+
+    # only 1 algo selected by client, otherwise function main func runs as normal with both search outputs
+    if useAlgo != "both_algo":
+        if useAlgo == "best_first_search":
+            output_search = perform_search(best_first_search, start_article, end_article)
+        elif useAlgo == "depth_first_search":
+            output_search = perform_search(depth_first_search, start_article, end_article)
+        output = {
+            "start": start_article,
+            "end": end_article,
+            "results": [output_search]
+        }
+
+        with open("path.json", "w") as file:
+            json.dump(output, file, indent=4)
+
+        exit()
+    # ~~~~~~~~~~~~ end ~~~~~~~~~~~~
 
     output_best_first_search = perform_search(best_first_search, start_article, end_article)
     output_depth_first_search = perform_search(depth_first_search, start_article, end_article)
