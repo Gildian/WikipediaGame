@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import axios from 'axios';
+import axios from "axios";
 import "./styles.scss";
 
 function Home() {
@@ -47,24 +47,24 @@ function Home() {
 
   const fetchFactData = async () => {
     try {
-      const res = await axios.get('https://api.api-ninjas.com/v1/facts?limit=1', {
+      const res = await axios.get("https://api.api-ninjas.com/v1/facts?limit=1", {
         headers: {
-          'X-Api-Key': 'qKYv6ffmUut4HXbt/CswWA==HIDFaMPKP5qaj5De'
-        }
+          "X-Api-Key": "qKYv6ffmUut4HXbt/CswWA==HIDFaMPKP5qaj5De",
+        },
       });
       setFact(res.data[0].fact);
     } catch (error) {
-      console.log(`Error: ${error.message}`)
-      setFact("I couldn't think of a good one")
+      console.log(`Error: ${error.message}`);
+      setFact("I couldn't think of a good one");
     }
-  }
+  };
 
   useEffect(() => {
     if (firstLoad) {
-      fetchFactData()
+      fetchFactData();
       setLoading(false);
     }
-  }, [firstLoad])
+  }, [firstLoad]);
 
   useEffect(() => {
     if (loading && !firstLoad) {
@@ -72,46 +72,45 @@ function Home() {
       const factChanger = setInterval(() => {
         fetchFactData();
       }, 10000);
-      setFactChangerId(factChanger)
+      setFactChangerId(factChanger);
     }
     return () => {
       if (factChangerId) {
         clearInterval(factChangerId);
       }
-    }
+    };
   }, [loading]);
 
   const fetchSearchData = async (isRandom) => {
     try {
-      const res = await axios.post('http://localhost:4000/', {
-          isRandom: isRandom,
-          startArticle: startTitle,
-          endArticle: endTitle,
-          algo: algoToggle
+      const res = await axios.post("http://localhost:4000/", {
+        isRandom: isRandom,
+        startArticle: startTitle,
+        endArticle: endTitle,
+        algo: algoToggle,
       });
       let results = res.data.results;
       if (results.length === 2) {
-        results = results.find(result => result.algo === "best_first_search");
+        results = results.find((result) => result.algo === "best_first_search");
         setPathData({
           path: results.path,
-          timeTaken: results.time
+          timeTaken: results.time,
         });
-      }
-      else {
+      } else {
         setPathData({
           path: results[0].path,
-          timeTaken: results[0].time
+          timeTaken: results[0].time,
         });
       }
     } catch (error) {
-      console.log(`Error: ${error.message}`)
+      console.log(`Error: ${error.message}`);
     }
-  }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    await fetchSearchData(e.target.value === 'random' ? true : false);
+    await fetchSearchData(e.target.value === "random" ? true : false);
     setFirstLoad(false);
     setLoading(false);
   };
@@ -157,20 +156,44 @@ function Home() {
             <button className="goButton" type="submit" value="go">
               Go
             </button>
-            <button type="submit" value="random">Random</button>
+            <button type="submit" value="random">
+              Random
+            </button>
           </form>
           <section className="botInfo">
             <div className="infoHeader">
-              <p className="clicks">{firstLoad ? '*' : clicks} Clicks</p>
-              <p className="timeTaken">{firstLoad ? 'Time: * Seconds' : `Time: ${pathData.timeTaken} Seconds`}</p>
+              <section className="infoGroup">
+                <p className={loading ? "clicks pizzaSpin" : "clicks"}>{firstLoad ? "*" : clicks}</p>
+                <p>Clicks</p>
+              </section>
+              <section className="infoGroup test">
+                <p className={loading ? "timeTaken pizzaSpin" : "timeTaken"}>{firstLoad ? "*" : pathData.timeTaken}</p>
+                <p>Seconds</p>
+              </section>
             </div>
             <div className="pathInfo">
-              <p className="path">{firstLoad ? <>Click <span>Go</span> or <span>Random</span> to start your search.<br/>Click <span>{algoTitle} First Search</span> to toggle search modes.</> : path}</p>
+              <p className={!loading ? "path" : "path pathLoader"}>
+                {firstLoad && !loading ? (
+                  <>
+                    Click <span>Go</span> or <span>Random</span> to start your search.
+                    <br />
+                    Click <span>{algoTitle} First Search</span> to toggle search modes.
+                  </>
+                ) : loading ? (
+                  <>Finding Path</>
+                ) : (
+                  path
+                )}
+              </p>
             </div>
           </section>
           {loading || firstLoad ? (
             <div className="funFact">
-              <p>Fun Fact:<br/>{fact ? fact : 'Loading...'}</p>
+              <p>
+                Fun Fact:
+                <br />
+                {fact ? fact : "Loading..."}
+              </p>
             </div>
           ) : (
             <div className="wikiPages">

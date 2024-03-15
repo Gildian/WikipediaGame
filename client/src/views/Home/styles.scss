@@ -124,11 +124,31 @@
 
           border-bottom: $borderWidth solid $secondaryColor;
 
-          p {
-            margin: 0;
-            font-size: 2.8rem;
+          .infoGroup {
+            display: flex;
+            justify-content: center;
+
+            width: 100%;
+
+            p {
+              margin: 0;
+              margin-left: 1.5%;
+              margin-right: 1.5%;
+              font-size: 2.8rem;
+            }
+
+            .pizzaSpin {
+              animation: spin 1.3s infinite both;
+            }
+
+            @keyframes spin {
+              100% {
+                transform: rotate(1turn);
+              }
+            }
           }
         }
+
         .pathInfo {
           display: flex;
           justify-content: center;
@@ -147,6 +167,23 @@
 
             span {
               color: $secondaryColor;
+            }
+          }
+
+          .pathLoader::after {
+            animation: dotLoad infinite 2.5s;
+            content: " .";
+          }
+
+          @keyframes dotLoad {
+            25% {
+              content: " . .";
+            }
+            50% {
+              content: " . . .";
+            }
+            75% {
+              content: "";
             }
           }
         }
