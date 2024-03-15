@@ -44,10 +44,10 @@
         margin-top: 2%;
 
         input {
-          width: 30%;
+          width: 20%;
           height: 60%;
 
-          padding-left: .6%;
+          padding-left: 0.6%;
 
           background-color: $primaryColor;
 
@@ -60,7 +60,7 @@
         }
 
         input:focus {
-            outline: 2px solid $primaryColor;
+          outline: 2px solid $primaryColor;
         }
 
         p {
@@ -89,6 +89,11 @@
           width: 12%;
         }
 
+        .algoToggleButton {
+          width: 20%;
+          font-size: 1.8rem;
+        }
+
         button:hover {
           background-color: #005491;
           cursor: pointer;
@@ -99,7 +104,7 @@
         flex-direction: column;
         justify-content: flex-start;
         align-items: center;
-        
+
         width: 100%;
         height: 26%;
 
@@ -110,55 +115,75 @@
         background-color: $primaryColor;
 
         .infoHeader {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
+          display: flex;
+          justify-content: space-around;
+          align-items: center;
 
-            width: 100%;
-            height: 45%;
-            
-            border-bottom: $borderWidth solid $secondaryColor;
+          width: 100%;
+          height: 45%;
 
-            p {
-                margin: 0;
-                font-size: 2.8rem;
-            }
+          border-bottom: $borderWidth solid $secondaryColor;
+
+          p {
+            margin: 0;
+            font-size: 2.8rem;
+          }
         }
         .pathInfo {
-            display: flex;
-            justify-content: center;
-            align-items: center;
+          display: flex;
+          justify-content: center;
+          align-items: center;
 
-            height: 100%;
-            width: 100%;
+          height: 100%;
+          width: 100%;
 
-            .path {
-                margin: 0;
-                font-size: 2.4rem;
-                height: 96%;
-                width: 98%;
+          .path {
+            margin: 0;
+            font-size: 2.4rem;
+            height: 96%;
+            width: 98%;
 
-                overflow-wrap: break-word;
+            overflow-wrap: break-word;
+
+            span {
+              color: $secondaryColor;
             }
+          }
         }
       }
+
+      .funFact {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        height: 55%;
+        width: 85%;
+
+        font-size: 3.4rem;
+        text-align: center;
+
+        p {
+          margin: 4% 0 0 0;
+        }
+      }
+
       .wikiPages {
         display: flex;
         justify-content: space-between;
 
-        height: 58%;
+        height: 55%;
         width: 100%;
 
         margin-top: 2%;
 
         iframe {
-            height: 100%;
-            width: 45%;
+          height: 100%;
+          width: 45%;
 
-            border-radius: $borderRadius;
-            border: $borderWidth solid $secondaryColor;
+          border-radius: $borderRadius;
+          border: $borderWidth solid $secondaryColor;
 
-            background-color: $primaryColor;
+          background-color: $primaryColor;
         }
 
         p {
