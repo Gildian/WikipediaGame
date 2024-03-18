@@ -2,8 +2,10 @@ const express = require("express");
 const { spawn } = require("child_process");
 const fs = require('fs');
 require("colors");
+const cors = require('cors');
 
 const app = express();
+app.use(cors());
 
 app.post("/", async (req, res) => {
   const isRandom = req.body?.isRandom == undefined ? true : req.body.isRandom;
