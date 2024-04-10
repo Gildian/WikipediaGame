@@ -1,48 +1,49 @@
 const express = require("express");
 const { spawn } = require("child_process");
 const fs = require('fs');
-require("colors");
+const path = require('path');
+const colors = require("colors");
 const cors = require('cors');
 
 const app = express();
 app.use(cors());
 
 app.post("/", async (req, res) => {
-  const isRandom = req.body?.isRandom == undefined ? true : req.body.isRandom;
-  const startArticle = req.body?.startArticle;
-  const endArticle = req.body?.endArticle;
-  const algo = req.body?.algo || 'best_first_search';
+  const { isRandom = true, startArticle, endArticle, algo = 'best_first_search' } = req.body;
   const botFile = 'main.py';
-  let botData;
-  let args = [`${botFile}`, 'client'];
+  const botDataPath = './path.json';
+  const args = [botFile, 'client'];
 
-  if (isRandom) {
-    args.push('random');
-  }
-  else if (!isRandom) {
-    args.push(`${startArticle}`, `${endArticle}`)
+  switch (isRandom) {
+    case true:
+      args.push('random');
+      break;
+    case false:
+      args.push(startArticle, endArticle);
+      break;
   }
 
-  args.push(`${algo}`)
-  console.log(args)
+  args.push(algo);
+  console.log(args);
 
   const wikiBot = spawn('python', args);
 
   wikiBot.stdout.on('data', (data) => {
-    if (data.toString().length !== 2 && (data.toString().includes('/') || data.toString().includes('|') || data.toString().includes('\\'))) {
-      console.log(data.toString())
+    const dataString = data.toString();
+    if (dataString.length !== 2 && (dataString.includes('/') || dataString.includes('|') || dataString.includes('\\'))) {
+      console.log(dataString);
     }
   });
 
   wikiBot.on('close', (code) => {
-    fs.readFile('./path.json', 'utf8', (err, jsonString) => {
+    fs.readFile(path.join(__dirname, botDataPath), 'utf8', (err, jsonString) => {
       if (err) {
         console.log("Error reading json file:", err);
         return;
       }
 
       try {
-        botData = JSON.parse(jsonString);
+        const botData = JSON.parse(jsonString);
         console.log(botData);
         res.status(200).json(botData);
       } catch (err) {
