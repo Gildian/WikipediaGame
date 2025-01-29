@@ -1,5 +1,5 @@
 # WikipediaGame
-Wikipedia Game Bot that finds the shortest path between two wikipedia articles.  
+Made among friends, Gildian, Matt and Steve. Wikipedia Game Bot that finds the shortest path between two wikipedia articles.  
 This bot requires the GloVe Wikipedia 2014 + Gigaword 5 vectors to work [download link here](https://nlp.stanford.edu/data/glove.6B.zip).
 ## Dependencies
 As stated above the GloVe vectors are required.  
