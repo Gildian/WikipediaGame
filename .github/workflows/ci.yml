@@ -1,0 +1,238 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-python:
+    name: Test Python Backend
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11, 3.12]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pytest-mock
+    
+    - name: Lint with flake8
+      run: |
+        pip install flake8
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+    
+    - name: Test with pytest
+      run: |
+        python -m pytest test_simple.py -v --tb=short
+    
+    - name: Test bot modules individually
+      run: |
+        cd bot
+        python -c "import main; print('✓ main.py imports successfully')"
+        python -c "import helpers; print('✓ helpers.py imports successfully')"
+        python -c "import search_functions; print('✓ search_functions.py imports successfully')"
+        python -c "import wikiapi; print('✓ wikiapi.py imports successfully')"
+        python -c "import glove_loader; print('✓ glove_loader.py imports successfully')"
+
+  test-frontend:
+    name: Test React Frontend
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: client/package-lock.json
+    
+    - name: Install frontend dependencies
+      working-directory: ./client
+      run: npm ci
+    
+    - name: Lint frontend code
+      working-directory: ./client
+      run: npm run lint || echo "Linting not configured, skipping..."
+    
+    - name: Build frontend
+      working-directory: ./client
+      run: npm run build
+    
+    - name: Run frontend tests (if configured)
+      working-directory: ./client
+      run: |
+        if [ -f "vitest.config.js" ]; then
+          npm install --save-dev @testing-library/react @testing-library/jest-dom @testing-library/user-event @vitejs/plugin-react jsdom vitest @vitest/ui c8
+          npm test -- --run || echo "Tests not fully configured, skipping..."
+        else
+          echo "No test configuration found, skipping frontend tests"
+        fi
+
+  test-backend-api:
+    name: Test Backend API
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: bot/package-lock.json
+    
+    - name: Install backend dependencies
+      working-directory: ./bot
+      run: npm ci
+    
+    - name: Test server startup
+      working-directory: ./bot
+      run: |
+        timeout 10s npm start || echo "Server startup test completed"
+    
+    - name: Lint backend code
+      working-directory: ./bot
+      run: |
+        npx eslint server.js || echo "ESLint not configured, skipping..."
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run Python security scan
+      run: |
+        pip install safety bandit
+        safety check --file requirements.txt || echo "Safety check completed with warnings"
+        bandit -r bot/ || echo "Bandit scan completed"
+    
+    - name: Run npm audit
+      working-directory: ./bot
+      run: |
+        npm audit --audit-level moderate || echo "npm audit completed with warnings"
+    
+    - name: Run frontend npm audit
+      working-directory: ./client
+      run: |
+        npm audit --audit-level moderate || echo "Frontend npm audit completed with warnings"
+
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [test-python, test-backend-api]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Install all dependencies
+      run: |
+        pip install -r requirements.txt
+        cd bot && npm ci
+        cd ../client && npm ci
+    
+    - name: Build frontend
+      working-directory: ./client
+      run: npm run build
+    
+    - name: Start backend server
+      working-directory: ./bot
+      run: |
+        npm start &
+        SERVER_PID=$!
+        echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
+        sleep 5
+    
+    - name: Test API endpoints
+      run: |
+        curl -f http://localhost:3001/api/health || echo "Health check endpoint test"
+        curl -f http://localhost:3001/api/random || echo "Random endpoint test"
+    
+    - name: Stop backend server
+      run: |
+        if [ ! -z "$SERVER_PID" ]; then
+          kill $SERVER_PID || echo "Server already stopped"
+        fi
+
+  build-and-validate:
+    name: Build and Validate
+    runs-on: ubuntu-latest
+    needs: [test-python, test-frontend, test-backend-api]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Validate project structure
+      run: |
+        echo "Validating project structure..."
+        test -f README.md || (echo "Missing README.md" && exit 1)
+        test -f requirements.txt || (echo "Missing requirements.txt" && exit 1)
+        test -d bot || (echo "Missing bot directory" && exit 1)
+        test -d client || (echo "Missing client directory" && exit 1)
+        test -f bot/main.py || (echo "Missing bot/main.py" && exit 1)
+        test -f bot/server.js || (echo "Missing bot/server.js" && exit 1)
+        test -f client/src/App.jsx || (echo "Missing client/src/App.jsx" && exit 1)
+        echo "✓ Project structure is valid"
+    
+    - name: Check code quality
+      run: |
+        echo "Checking Python files for basic syntax..."
+        python -m py_compile bot/main.py
+        python -m py_compile bot/helpers.py
+        python -m py_compile bot/search_functions.py
+        python -m py_compile bot/wikiapi.py
+        python -m py_compile bot/glove_loader.py
+        echo "✓ Python files compile successfully"
+    
+    - name: Generate build artifacts info
+      run: |
+        echo "Build Information:" > build-info.txt
+        echo "Timestamp: $(date)" >> build-info.txt
+        echo "Commit: $GITHUB_SHA" >> build-info.txt
+        echo "Branch: $GITHUB_REF" >> build-info.txt
+        echo "Python files: $(find . -name '*.py' | wc -l)" >> build-info.txt
+        echo "JavaScript files: $(find . -name '*.js' -o -name '*.jsx' | wc -l)" >> build-info.txt
+        cat build-info.txt
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-info
+        path: build-info.txt

@@ -1,208 +1,362 @@
-import React, { useEffect, useMemo, useState } from "react";
+/**
+ * Wikipedia Path Finder - Home Component
+ * 
+ * Main interface for the Wikipedia pathfinding application with real-time
+ * search capabilities, algorithm selection, and results visualization.
+ * 
+ * @author Gildian Gonzales
+ * @license MIT
+ */
+
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import axios from "axios";
 import "./styles.scss";
 
+// Configuration
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const FACTS_API_KEY = import.meta.env.VITE_FACTS_API_KEY || "qKYv6ffmUut4HXbt/CswWA==HIDFaMPKP5qaj5De";
+const FACT_REFRESH_INTERVAL = 10000; // 10 seconds
+
 function Home() {
+  // Search state
   const [pathData, setPathData] = useState({
     path: "[]",
     timeTaken: 0,
+    success: false
   });
-  const [loading, setLoading] = useState(true);
-  const [startTitle, setStartTitle] = useState("Minecraft");
-  const [endTitle, setEndTitle] = useState("Pizza");
-  const [algoToggle, setAlgoToggle] = useState("best_first_search");
-  const [fact, setFact] = useState("");
+  
+  // UI state
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [firstLoad, setFirstLoad] = useState(true);
+  
+  // Form state
+  const [startTitle, setStartTitle] = useState("Python (programming language)");
+  const [endTitle, setEndTitle] = useState("Machine learning");
+  const [algoToggle, setAlgoToggle] = useState("best_first_search");
+  
+  // Fun facts state
+  const [fact, setFact] = useState("");
   const [factChangerId, setFactChangerId] = useState(null);
 
+  // Computed values
   const clicks = useMemo(() => {
-    let pathArr = pathData.path.replaceAll("'", '"');
-    pathArr = pathArr.replaceAll('"s', "'s");
-    pathArr = JSON.parse(pathArr);
-    return pathArr.length - 1;
-  }, [pathData]);
+    try {
+      let pathArr = pathData.path.replaceAll("'", '"');
+      pathArr = pathArr.replaceAll('"s', "'s");
+      const parsed = JSON.parse(pathArr);
+      return Math.max(0, parsed.length - 1);
+    } catch {
+      return 0;
+    }
+  }, [pathData.path]);
 
-  const path = useMemo(() => {
-    let pathArr = pathData.path.replaceAll("'", '"');
-    pathArr = pathArr.replaceAll('"s', "'s");
-    pathArr = JSON.parse(pathArr);
-    let text = "";
-    let counter = pathArr.length;
-    pathArr.forEach((element) => {
-      if (counter === 1) text += `${element}`;
-      else text += `${element} > `;
-      counter--;
-    });
-    return text;
-  }, [pathData]);
+  const pathDisplay = useMemo(() => {
+    try {
+      let pathArr = pathData.path.replaceAll("'", '"');
+      pathArr = pathArr.replaceAll('"s', "'s");
+      const parsed = JSON.parse(pathArr);
+      
+      if (parsed.length === 0) return "";
+      
+      return parsed.join(" → ");
+    } catch {
+      return "Invalid path data";
+    }
+  }, [pathData.path]);
 
   const algoTitle = useMemo(() => {
     switch (algoToggle) {
       case "best_first_search":
-        return "Best";
+        return "Best-First";
       case "depth_first_search":
-        return "Depth";
+        return "Depth-First";
+      default:
+        return "Unknown";
     }
   }, [algoToggle]);
 
-  const fetchFactData = async () => {
+  // Fetch random facts for entertainment during loading
+  const fetchFactData = useCallback(async () => {
     try {
-      const res = await axios.get("https://api.api-ninjas.com/v1/facts?limit=1", {
+      const response = await axios.get("https://api.api-ninjas.com/v1/facts?limit=1", {
         headers: {
-          "X-Api-Key": "qKYv6ffmUut4HXbt/CswWA==HIDFaMPKP5qaj5De",
+          "X-Api-Key": FACTS_API_KEY,
         },
+        timeout: 5000
       });
-      setFact(res.data[0].fact);
+      
+      if (response.data && response.data[0]) {
+        setFact(response.data[0].fact);
+      } else {
+        setFact("Did you know? The Wikipedia game was created to explore the connections between different topics!");
+      }
     } catch (error) {
-      console.log(`Error: ${error.message}`);
-      setFact("I couldn't think of a good one");
+      console.warn("Failed to fetch fact:", error.message);
+      const fallbackFacts = [
+        "Wikipedia contains over 6 million articles in English!",
+        "The average Wikipedia page is linked to by about 15 other pages.",
+        "Did you know that this bot uses AI to find semantic connections?",
+        "Machine learning helps this bot understand article relationships!",
+        "The GloVe embeddings used here were trained on billions of words."
+      ];
+      setFact(fallbackFacts[Math.floor(Math.random() * fallbackFacts.length)]);
     }
-  };
+  }, []);
 
+  // Initialize facts on first load
   useEffect(() => {
     if (firstLoad) {
       fetchFactData();
       setLoading(false);
     }
-  }, [firstLoad]);
+  }, [firstLoad, fetchFactData]);
 
+  // Manage fact refresh during loading
   useEffect(() => {
     if (loading && !firstLoad) {
       fetchFactData();
-      const factChanger = setInterval(() => {
-        fetchFactData();
-      }, 10000);
+      const factChanger = setInterval(fetchFactData, FACT_REFRESH_INTERVAL);
       setFactChangerId(factChanger);
+      
+      return () => {
+        if (factChanger) {
+          clearInterval(factChanger);
+        }
+      };
     }
+    
     return () => {
       if (factChangerId) {
         clearInterval(factChangerId);
+        setFactChangerId(null);
       }
     };
-  }, [loading]);
+  }, [loading, firstLoad, fetchFactData, factChangerId]);
 
-  const fetchSearchData = async (isRandom) => {
+  // Perform search request
+  const fetchSearchData = useCallback(async (isRandom) => {
+    setError(null);
+    
     try {
-      const res = await axios.post("http://localhost:4000/", {
+      const requestData = {
         isRandom: isRandom,
-        startArticle: startTitle,
-        endArticle: endTitle,
+        startArticle: startTitle.trim(),
+        endArticle: endTitle.trim(),
         algo: algoToggle,
+      };
+      
+      console.log("🔍 Starting search:", requestData);
+      
+      const response = await axios.post(`${API_BASE_URL}/`, requestData, {
+        timeout: 180000, // 3 minutes
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
-      let results = res.data.results;
-      if (results.length === 2) {
-        results = results.find((result) => result.algo === "best_first_search");
-        setPathData({
-          path: results.path,
-          timeTaken: results.time,
-        });
-      } else {
-        setPathData({
-          path: results[0].path,
-          timeTaken: results[0].time,
-        });
+      
+      const { results, start, end } = response.data;
+      
+      if (!results || results.length === 0) {
+        throw new Error("No results returned from search");
       }
+      
+      // Handle multiple algorithm results
+      let selectedResult;
+      if (results.length > 1) {
+        selectedResult = results.find(result => result.algo === algoToggle) || results[0];
+      } else {
+        selectedResult = results[0];
+      }
+      
+      if (!selectedResult.success && selectedResult.path === "NO SOLUTION") {
+        throw new Error(`No path found between "${start}" and "${end}"`);
+      }
+      
+      setPathData({
+        path: selectedResult.path,
+        timeTaken: selectedResult.time,
+        success: selectedResult.success || true
+      });
+      
+      console.log("✅ Search completed:", selectedResult);
+      
     } catch (error) {
-      console.log(`Error: ${error.message}`);
+      console.error("❌ Search failed:", error);
+      
+      let errorMessage = "Search failed";
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = "Search timed out. Try again with different articles.";
+      } else if (error.response) {
+        errorMessage = error.response.data?.error || `Server error: ${error.response.status}`;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+      setPathData({
+        path: "[]",
+        timeTaken: 0,
+        success: false
+      });
     }
-  };
+  }, [startTitle, endTitle, algoToggle]);
 
-  const handleSubmit = async (e) => {
+  // Handle form submission
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
-    setLoading(true);
-    await fetchSearchData(e.target.value === "random" ? true : false);
-    setFirstLoad(false);
-    setLoading(false);
-  };
-
-  const handleAlgoToggle = (e) => {
-    switch (algoToggle) {
-      case "best_first_search":
-        setAlgoToggle("depth_first_search");
-        break;
-      case "depth_first_search":
-        setAlgoToggle("best_first_search");
-        break;
+    
+    const isRandom = e.nativeEvent.submitter?.value === "random";
+    
+    // Validation for non-random searches
+    if (!isRandom) {
+      if (!startTitle.trim() || !endTitle.trim()) {
+        setError("Please enter both start and end articles");
+        return;
+      }
+      
+      if (startTitle.trim().toLowerCase() === endTitle.trim().toLowerCase()) {
+        setError("Start and end articles must be different");
+        return;
+      }
     }
-  };
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      await fetchSearchData(isRandom);
+      setFirstLoad(false);
+    } finally {
+      setLoading(false);
+    }
+  }, [startTitle, endTitle, fetchSearchData]);
+
+  // Handle algorithm toggle
+  const handleAlgoToggle = useCallback(() => {
+    setAlgoToggle(current => 
+      current === "best_first_search" ? "depth_first_search" : "best_first_search"
+    );
+  }, []);
+
+  // Handle input focus (clear placeholder)
+  const handleInputFocus = useCallback((setter) => () => {
+    setter("");
+  }, []);
 
   return (
     <div className="homePage">
-      <h1>The Wiki Bot</h1>
+      <header>
+        <h1>Wikipedia Path Finder</h1>
+        <p className="subtitle">
+          Find the shortest path between any two Wikipedia articles using AI
+        </p>
+      </header>
+
       <main>
-        <div></div>
         <div className="centerSection">
-          <form id="pathForm" onSubmit={(e) => handleSubmit(e)}>
-            <input
-              type="text"
-              placeholder="Start Title"
-              name="startTitle"
-              value={startTitle}
-              onFocus={() => setStartTitle("")}
-              onChange={(e) => setStartTitle(e.target.value)}
-            />
-            <p>to</p>
-            <input
-              type="text"
-              placeholder="End Title"
-              name="endTitle"
-              value={endTitle}
-              onFocus={() => setEndTitle("")}
-              onChange={(e) => setEndTitle(e.target.value)}
-            />
-            <button className="algoToggleButton" type="button" onClick={handleAlgoToggle}>
-              {algoTitle} First Search
-            </button>
-            <button className="goButton" type="submit" value="go">
-              Go
-            </button>
-            <button type="submit" value="random">
-              Random
-            </button>
+          <form id="pathForm" onSubmit={handleSubmit}>
+            <div className="input-group">
+              <input
+                type="text"
+                placeholder="Start Article"
+                name="startTitle"
+                value={startTitle}
+                onFocus={handleInputFocus(setStartTitle)}
+                onChange={(e) => setStartTitle(e.target.value)}
+                disabled={loading}
+                aria-label="Starting Wikipedia article"
+              />
+              <span className="connector">to</span>
+              <input
+                type="text"
+                placeholder="End Article"
+                name="endTitle"
+                value={endTitle}
+                onFocus={handleInputFocus(setEndTitle)}
+                onChange={(e) => setEndTitle(e.target.value)}
+                disabled={loading}
+                aria-label="Target Wikipedia article"
+              />
+            </div>
+            
+            <div className="button-group">
+              <button 
+                className="algoToggleButton" 
+                type="button" 
+                onClick={handleAlgoToggle}
+                disabled={loading}
+                title="Toggle between search algorithms"
+              >
+                {algoTitle} Search
+              </button>
+              <button 
+                className="goButton" 
+                type="submit" 
+                value="go"
+                disabled={loading}
+              >
+                {loading ? "Searching..." : "Find Path"}
+              </button>
+              <button 
+                type="submit" 
+                value="random"
+                disabled={loading}
+                title="Search between two random articles"
+              >
+                Random Articles
+              </button>
+            </div>
           </form>
-          <section className="botInfo">
-            <div className="infoHeader">
-              <section className="infoGroup">
-                <p className={loading ? "clicks pizzaSpin" : "clicks"}>{firstLoad ? "*" : clicks}</p>
-                <p>Clicks</p>
-              </section>
-              <section className="infoGroup test">
-                <p className={loading ? "timeTaken pizzaSpin" : "timeTaken"}>{firstLoad ? "*" : pathData.timeTaken}</p>
-                <p>Seconds</p>
-              </section>
-            </div>
-            <div className="pathInfo">
-              <p className={!loading ? "path" : "path pathLoader"}>
-                {firstLoad && !loading ? (
-                  <>
-                    Click <span>Go</span> or <span>Random</span> to start your search.
-                    <br />
-                    Click <span>{algoTitle} First Search</span> to toggle search modes.
-                  </>
-                ) : loading ? (
-                  <>Finding Path</>
-                ) : (
-                  path
-                )}
-              </p>
-            </div>
-          </section>
-          {loading || firstLoad ? (
-            <div className="funFact">
-              <p>
-                Fun Fact:
-                <br />
-                {fact ? fact : "Loading..."}
-              </p>
-            </div>
-          ) : (
-            <div className="wikiPages">
-              <iframe src="" frameborder="0"></iframe>
-              <iframe src="" frameborder="0"></iframe>
+
+          {error && (
+            <div className="error-message">
+              <p>❌ {error}</p>
             </div>
           )}
+
+          <section className="botInfo">
+            <div className="infoHeader">
+              <div className="infoGroup">
+                <p className={loading ? "clicks pizzaSpin" : "clicks"}>
+                  {firstLoad ? "•" : clicks}
+                </p>
+                <span>Steps</span>
+              </div>
+              <div className="infoGroup">
+                <p className={loading ? "timeTaken pizzaSpin" : "timeTaken"}>
+                  {firstLoad ? "•" : pathData.timeTaken}
+                </p>
+                <span>Seconds</span>
+              </div>
+            </div>
+            
+            <div className="pathInfo">
+              <div className={!loading ? "path" : "path pathLoader"}>
+                {firstLoad && !loading ? (
+                  <>
+                    Click <strong>Find Path</strong> or <strong>Random Articles</strong> to start.
+                    <br />
+                    Use <strong>{algoTitle} Search</strong> to toggle algorithms.
+                  </>
+                ) : loading ? (
+                  <>Finding optimal path</>
+                ) : (
+                  <span className="path-result">
+                    {pathDisplay || "No path found"}
+                  </span>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {(loading || firstLoad) && (
+            <section className="funFact">
+              <h3>Did You Know?</h3>
+              <p>{fact || "Loading interesting facts..."}</p>
+            </section>
+          )}
         </div>
-        <div></div>
       </main>
     </div>
   );
