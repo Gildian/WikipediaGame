@@ -21,7 +21,7 @@ const PORT = process.env.PORT || 4000;
 const BOT_FILE = 'main.py';
 const BOT_DATA_PATH = './path.json';
 const REQUEST_TIMEOUT = 180000; // 3 minutes
-const PYTHON_EXECUTABLE = process.env.PYTHON_PATH || 'python';
+const PYTHON_EXECUTABLE = process.env.PYTHON_PATH || path.join(__dirname, '..', '.venv', 'bin', 'python');
 
 // Initialize Express app
 const app = express();

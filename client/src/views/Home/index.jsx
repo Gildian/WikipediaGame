@@ -244,12 +244,24 @@ function Home() {
     setter("");
   }, []);
 
+  // Handle input validation with visual feedback
+  const validateInputs = useCallback(() => {
+    const startValid = startTitle.trim().length > 0;
+    const endValid = endTitle.trim().length > 0;
+    const different = startTitle.trim().toLowerCase() !== endTitle.trim().toLowerCase();
+    
+    return startValid && endValid && different;
+  }, [startTitle, endTitle]);
+
+  // Enhanced success state handling
+  const isSuccessState = pathData.success && pathDisplay && !firstLoad && !loading;
+
   return (
     <div className="homePage">
       <header>
         <h1>Wikipedia Path Finder</h1>
         <p className="subtitle">
-          Find the shortest path between any two Wikipedia articles using AI
+          Discover the shortest path between any two Wikipedia articles using advanced AI algorithms
         </p>
       </header>
 
@@ -259,24 +271,26 @@ function Home() {
             <div className="input-group">
               <input
                 type="text"
-                placeholder="Start Article"
+                placeholder="Start Article (e.g., Python programming)"
                 name="startTitle"
                 value={startTitle}
                 onFocus={handleInputFocus(setStartTitle)}
                 onChange={(e) => setStartTitle(e.target.value)}
                 disabled={loading}
                 aria-label="Starting Wikipedia article"
+                autoComplete="off"
               />
-              <span className="connector">to</span>
+              <span className="connector">→</span>
               <input
                 type="text"
-                placeholder="End Article"
+                placeholder="End Article (e.g., Machine Learning)"
                 name="endTitle"
                 value={endTitle}
                 onFocus={handleInputFocus(setEndTitle)}
                 onChange={(e) => setEndTitle(e.target.value)}
                 disabled={loading}
                 aria-label="Target Wikipedia article"
+                autoComplete="off"
               />
             </div>
             
@@ -286,36 +300,52 @@ function Home() {
                 type="button" 
                 onClick={handleAlgoToggle}
                 disabled={loading}
-                title="Toggle between search algorithms"
+                title={`Currently using ${algoTitle} algorithm. Click to switch.`}
+                aria-label={`Switch from ${algoTitle} to ${algoToggle === "best_first_search" ? "Depth-First" : "Best-First"} algorithm`}
               >
-                {algoTitle} Search
+                🔄 {algoTitle} Search
               </button>
               <button 
                 className="goButton" 
                 type="submit" 
                 value="go"
-                disabled={loading}
+                disabled={loading || !validateInputs()}
+                aria-label="Start pathfinding search"
               >
-                {loading ? "Searching..." : "Find Path"}
+                {loading ? (
+                  <>
+                    <span className="spinner">⚡</span>
+                    Searching...
+                  </>
+                ) : validateInputs() ? (
+                  <>
+                    🔍 Find Path
+                  </>
+                ) : (
+                  <>
+                    📝 Enter Articles
+                  </>
+                )}
               </button>
               <button 
                 type="submit" 
                 value="random"
                 disabled={loading}
-                title="Search between two random articles"
+                title="Find path between two randomly selected Wikipedia articles"
+                aria-label="Search between random articles"
               >
-                Random Articles
+                🎲 Random Articles
               </button>
             </div>
           </form>
 
           {error && (
-            <div className="error-message">
-              <p>❌ {error}</p>
+            <div className="error-message" role="alert">
+              <p>⚠️ {error}</p>
             </div>
           )}
 
-          <section className="botInfo">
+          <section className="botInfo" aria-live="polite">
             <div className="infoHeader">
               <div className="infoGroup">
                 <p className={loading ? "clicks pizzaSpin" : "clicks"}>
@@ -325,9 +355,9 @@ function Home() {
               </div>
               <div className="infoGroup">
                 <p className={loading ? "timeTaken pizzaSpin" : "timeTaken"}>
-                  {firstLoad ? "•" : pathData.timeTaken}
+                  {firstLoad ? "•" : `${pathData.timeTaken}s`}
                 </p>
-                <span>Seconds</span>
+                <span>Duration</span>
               </div>
             </div>
             
@@ -335,15 +365,23 @@ function Home() {
               <div className={!loading ? "path" : "path pathLoader"}>
                 {firstLoad && !loading ? (
                   <>
-                    Click <strong>Find Path</strong> or <strong>Random Articles</strong> to start.
+                    Welcome to Wikipedia Path Finder! 🎯
                     <br />
-                    Use <strong>{algoTitle} Search</strong> to toggle algorithms.
+                    Enter two articles above and click <strong>Find Path</strong> to discover how they're connected.
+                    <br />
+                    Try <strong>Random Articles</strong> for a surprise, or toggle between <strong>{algoTitle} Search</strong> algorithms.
                   </>
                 ) : loading ? (
-                  <>Finding optimal path</>
+                  <>
+                    🧠 AI is analyzing Wikipedia connections
+                  </>
+                ) : pathData.success && pathDisplay ? (
+                  <span className="path-result">
+                    🎉 Path found: {pathDisplay}
+                  </span>
                 ) : (
                   <span className="path-result">
-                    {pathDisplay || "No path found"}
+                    😔 No path could be found between these articles
                   </span>
                 )}
               </div>
@@ -351,9 +389,9 @@ function Home() {
           </section>
 
           {(loading || firstLoad) && (
-            <section className="funFact">
-              <h3>Did You Know?</h3>
-              <p>{fact || "Loading interesting facts..."}</p>
+            <section className="funFact" aria-live="polite">
+              <h3>💡 Did You Know?</h3>
+              <p>{fact || "Loading fascinating facts about Wikipedia and AI..."}</p>
             </section>
           )}
         </div>
